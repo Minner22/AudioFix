@@ -1,5 +1,8 @@
 package pl.audiofix.ffmpeg;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -9,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class FfmpegLocator {
+
+    private static final Logger log = LoggerFactory.getLogger(FfmpegLocator.class);
 
     static final String FFMPEG_EXE = "ffmpeg.exe";
     private static final String PREF_KEY = "ffmpegPath";
@@ -33,18 +38,23 @@ public class FfmpegLocator {
 
         if (preferencePath != null) {
 
-            Path ffmpegPath = Path.of(preferencePath);
+            try {
+                Path ffmpegPath = Path.of(preferencePath);
 
-            FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
+                FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
 
-            if (isComplete(paths)) {
+                if (isComplete(paths)) {
 
-                return Optional.of(paths);
+                    log.info("Using saved ffmpeg: {}", paths.ffmpeg());
+                    return Optional.of(paths);
+                }
+                log.warn("Saved ffmpeg is missing or incomplete, clearing: {}", preferencePath);
+            } catch (InvalidPathException _) {
+
+                log.warn("Invalid saved ffmpeg path, clearing: {}", preferencePath);
             }
-            else {
 
-                preferences.remove(PREF_KEY);
-            }
+            preferences.remove(PREF_KEY);
         }
 
         if (pathEnv == null) {
@@ -66,14 +76,16 @@ public class FfmpegLocator {
                 FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
                 if (isComplete(paths)) {
 
+                    log.info("Using ffmpeg from PATH: {}", paths.ffmpeg());
                     return Optional.of(paths);
                 }
             } catch (InvalidPathException _) {
 
-                System.err.println("Invalid path: " + pathCleaned);
+                log.debug("Skipping invalid PATH entry: {}", pathCleaned);
             }
         }
 
+        log.info("ffmpeg not found in preferences or PATH");
         return Optional.empty();
     }
 
@@ -94,8 +106,9 @@ public class FfmpegLocator {
         }
 
         preferences.put(PREF_KEY, ffmpegPath.toAbsolutePath().toString());
+        log.info("Saved ffmpeg path: {}", ffmpegPath.toAbsolutePath());
 
-        return FfmpegPaths.fromFfmpeg(ffmpegPath);
+        return paths;
     }
 
     boolean ffmpegVersionCheckOk(Path ffmpegPath) {
@@ -110,11 +123,20 @@ public class FfmpegLocator {
 
             if (!finished) {
                 p.destroyForcibly();
+                log.warn("ffmpeg -version timed out: {}", ffmpegPath);
                 return false;
             }
 
-            return p.exitValue() == 0;
-        } catch (Exception _) {
+            int exitCode = p.exitValue();
+            if (exitCode != 0) {
+                log.warn("ffmpeg -version exited with code {}: {}", exitCode, ffmpegPath);
+            }
+            return exitCode == 0;
+        } catch (InterruptedException _) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (Exception e) {
+            log.warn("Cannot run ffmpeg -version: {}", ffmpegPath, e);
             return false;
         }
     }

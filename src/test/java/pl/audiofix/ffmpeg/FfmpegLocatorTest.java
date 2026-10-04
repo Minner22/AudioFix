@@ -73,6 +73,17 @@ class FfmpegLocatorTest {
     }
 
     @Test
+    void invalidSavedPathFallsBackToPathAndClearsPreference() throws IOException {
+        Path onPath = ffmpegDir("onPath", true);
+        prefs.put(PREF_KEY, "C:\\bad<>|path\\ffmpeg.exe");
+
+        Optional<FfmpegPaths> result = locator(onPath.toString()).locate();
+
+        assertEquals(Optional.of(paths(onPath)), result);
+        assertNull(prefs.get(PREF_KEY, null));
+    }
+
+    @Test
     void savedPathWithoutFfprobeIsNotReturned() throws IOException {
         Path dir = ffmpegDir("saved", false);
         prefs.put(PREF_KEY, dir.resolve("ffmpeg.exe").toString());
