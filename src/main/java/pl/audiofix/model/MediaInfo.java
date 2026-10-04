@@ -10,17 +10,17 @@ public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams)
         streams = List.copyOf(streams);
     }
 
-    List<StreamInfo> audioStreams() {
+    public List<StreamInfo> audioStreams() {
 
         return streamsOf(StreamType.AUDIO);
     }
 
-    List<StreamInfo> subtitleStreams() {
+    public List<StreamInfo> subtitleStreams() {
 
         return streamsOf(StreamType.SUBTITLE);
     }
 
-    List<StreamInfo> streamsOf(StreamType type) {
+    public List<StreamInfo> streamsOf(StreamType type) {
 
         return streams.stream()
                 .filter(stream -> stream.type() == type)

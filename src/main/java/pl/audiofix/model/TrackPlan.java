@@ -47,7 +47,7 @@ public class TrackPlan {
         targetCodec.set(value);
     }
 
-    public BooleanProperty getMakeDefaultProperty() {
+    public BooleanProperty makeDefaultProperty() {
 
         return makeDefault;
     }
@@ -60,6 +60,11 @@ public class TrackPlan {
     public void setMakeDefault(boolean value) {
 
         makeDefault.set(value);
+    }
+
+    public StreamInfo getStream() {
+
+        return stream;
     }
 
     public static TrackPlan defaultsFor(StreamInfo stream) {

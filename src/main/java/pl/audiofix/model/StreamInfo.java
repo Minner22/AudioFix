@@ -19,17 +19,17 @@ public record StreamInfo(
         }
     }
 
-    boolean isDts() {
+    public boolean isDts() {
 
         return isAudio() && "dts".equals(codec);
     }
 
-    boolean isAudio() {
+    public boolean isAudio() {
 
         return type == StreamType.AUDIO;
     }
 
-    String codecLabel() {
+    public String codecLabel() {
 
         return profile != null && !profile.isBlank()
                 ? codec + " (" + profile + ")"
