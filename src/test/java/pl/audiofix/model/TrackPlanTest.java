@@ -28,6 +28,20 @@ class TrackPlanTest {
     }
 
     @Test
+    void trueHdTrackDefaultsToPcm() {
+        var trueHd = stream(StreamType.AUDIO, "truehd", "Dolby TrueHD + Dolby Atmos", true);
+
+        assertEquals(AudioCodec.PCM_S24LE, TrackPlan.defaultsFor(trueHd).getTargetCodec());
+    }
+
+    @Test
+    void eac3TrackDefaultsToCopy() {
+        var eac3 = stream(StreamType.AUDIO, "eac3", null, false);
+
+        assertEquals(AudioCodec.COPY, TrackPlan.defaultsFor(eac3).getTargetCodec());
+    }
+
+    @Test
     void nonAudioTrackHasNoTargetCodec() {
         var subtitle = stream(StreamType.SUBTITLE, "subrip", null, false);
         var video = stream(StreamType.VIDEO, "hevc", "Main 10", true);

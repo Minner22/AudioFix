@@ -73,7 +73,7 @@ public class TrackPlan {
         plan.setKeep(true);
         plan.setMakeDefault(stream.isDefault());
         if (stream.isAudio()) {
-            plan.setTargetCodec(stream.isDts() ? AudioCodec.PCM_S24LE : AudioCodec.COPY);
+            plan.setTargetCodec(stream.needsConversion() ? AudioCodec.PCM_S24LE : AudioCodec.COPY);
         }
         else {
             plan.setTargetCodec(null);

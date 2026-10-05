@@ -205,6 +205,18 @@ class FfprobeParserTest {
         info.streams().forEach(s -> assertNotNull(s.codec(), "missing codec for stream " + s.index()));
     }
 
+    @Test
+    void realSampleHasTrueHdAndDtsToConvert() throws IOException {
+        MediaInfo info = parser.parse(FILE, resource("/probe-dts.json"));
+
+        List<String> toConvert = info.audioStreams().stream()
+                .filter(StreamInfo::needsConversion)
+                .map(StreamInfo::codec)
+                .toList();
+
+        assertEquals(List.of("truehd", "dts"), toConvert);
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static String withStreams(String... streams) {

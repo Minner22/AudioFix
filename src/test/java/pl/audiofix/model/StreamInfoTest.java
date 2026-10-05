@@ -2,6 +2,8 @@ package pl.audiofix.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,6 +61,42 @@ class StreamInfoTest {
     void codecLabelWithoutProfileIsCodecOnly() {
         assertEquals("ac3", audio("ac3", null, "eng").codecLabel());
         assertEquals("ac3", audio("ac3", "", "eng").codecLabel());
+    }
+
+    // ---------------------------------------------------------------- needsConversion (#18)
+
+    @Test
+    void dtsNeedsConversion() {
+        assertTrue(audio("dts", "DTS-HD MA", "eng").needsConversion());
+    }
+
+    @Test
+    void trueHdNeedsConversion() {
+        assertTrue(audio("truehd", "Dolby TrueHD + Dolby Atmos", "eng").needsConversion());
+    }
+
+    @Test
+    void trueHdIsNotDts() {
+        assertFalse(audio("truehd", null, "eng").isDts());
+    }
+
+    @Test
+    void tvFriendlyCodecsDoNotNeedConversion() {
+        for (String codec : List.of("ac3", "eac3", "aac", "flac", "pcm_s24le")) {
+            assertFalse(audio(codec, null, "eng").needsConversion(), codec);
+        }
+    }
+
+    @Test
+    void nonAudioStreamDoesNotNeedConversion() {
+        var other = new StreamInfo(5, StreamType.OTHER, "dts", null, 0, null, "eng", null, false);
+
+        assertFalse(other.needsConversion());
+    }
+
+    @Test
+    void missingCodecDoesNotNeedConversion() {
+        assertFalse(audio(null, null, "eng").needsConversion());
     }
 
     private static StreamInfo audio(String codec, String profile, String language) {

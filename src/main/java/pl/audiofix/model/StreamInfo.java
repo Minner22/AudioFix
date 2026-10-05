@@ -1,5 +1,7 @@
 package pl.audiofix.model;
 
+import java.util.Set;
+
 public record StreamInfo(
         int index,
         StreamType type,
@@ -11,6 +13,8 @@ public record StreamInfo(
         String title,
         boolean isDefault
 ) {
+
+    private static final Set<String> CODECS_TO_CONVERT = Set.of("dts", "truehd");
 
     public StreamInfo {
 
@@ -34,5 +38,10 @@ public record StreamInfo(
         return profile != null && !profile.isBlank()
                 ? codec + " (" + profile + ")"
                 : codec;
+    }
+
+    public boolean needsConversion() {
+
+        return isAudio() && codec != null && CODECS_TO_CONVERT.contains(codec);
     }
 }
