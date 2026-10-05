@@ -19,7 +19,7 @@ class TrackPlanTest {
     }
 
     @Test
-    void nonDtsAudioDefaultsToCopy() {
+    void ac3AudioDefaultsToCopy() {
         var ac3 = stream(StreamType.AUDIO, "ac3", null, false);
 
         var plan = TrackPlan.defaultsFor(ac3);
