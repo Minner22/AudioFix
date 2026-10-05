@@ -1,9 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.control.Label?>
 
-<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="pl.audiofix.ui.MainController" stylesheets="@styles.css">
+    <top>
+        <ToolBar>
+            <Button fx:id="addFilesButton" text="Dodaj pliki…" onAction="#onAddFiles"/>
+            <Button fx:id="ffmpegSettingsButton" text="Ustawienia ffmpeg" onAction="#onFfmpegSettings"/>
+        </ToolBar>
+    </top>
     <center>
-        <Label  text="AudioFix"/>
+        <SplitPane dividerPositions="0.25">
+            <VBox spacing="8">
+                <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+                <Label text="Kolejka"/>
+                <ListView fx:id="queueList" VBox.vgrow="ALWAYS"/>
+                <Button fx:id="removeFromQueueButton" text="Usuń z kolejki" onAction="#onRemoveFromQueue"/>
+            </VBox>
+            <VBox spacing="8">
+                <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+                <Label text="Ścieżki"/>
+                <TableView fx:id="trackTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="keepColumn" text="Zostaw"/>
+                        <TableColumn fx:id="indexColumn" text="#"/>
+                        <TableColumn fx:id="typeColumn" text="Typ"/>
+                        <TableColumn fx:id="codecColumn" text="Kodek"/>
+                        <TableColumn fx:id="channelsColumn" text="Kanały"/>
+                        <TableColumn fx:id="languageColumn" text="Język"/>
+                        <TableColumn fx:id="titleColumn" text="Tytuł"/>
+                        <TableColumn fx:id="actionColumn" text="Akcja"/>
+                        <TableColumn fx:id="defaultColumn" text="Domyślna"/>
+                    </columns>
+                </TableView>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="Plik wyjściowy:"/>
+                    <TextField fx:id="outputField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="changeOutputButton" text="Zmień…" onAction="#onChangeOutput"/>
+                </HBox>
+            </VBox>
+        </SplitPane>
     </center>
+    <bottom>
+        <VBox spacing="8">
+            <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Button fx:id="startButton" text="Start" onAction="#onStart"/>
+                <Button fx:id="cancelButton" text="Anuluj" onAction="#onCancel"/>
+                <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+            </HBox>
+            <TextArea fx:id="logArea" editable="false" prefRowCount="6"/>
+        </VBox>
+    </bottom>
 </BorderPane>
