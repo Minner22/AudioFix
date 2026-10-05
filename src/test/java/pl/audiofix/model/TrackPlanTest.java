@@ -19,12 +19,26 @@ class TrackPlanTest {
     }
 
     @Test
-    void nonDtsAudioDefaultsToCopy() {
+    void ac3AudioDefaultsToCopy() {
         var ac3 = stream(StreamType.AUDIO, "ac3", null, false);
 
         var plan = TrackPlan.defaultsFor(ac3);
 
         assertEquals(AudioCodec.COPY, plan.getTargetCodec());
+    }
+
+    @Test
+    void trueHdTrackDefaultsToPcm() {
+        var trueHd = stream(StreamType.AUDIO, "truehd", "Dolby TrueHD + Dolby Atmos", true);
+
+        assertEquals(AudioCodec.PCM_S24LE, TrackPlan.defaultsFor(trueHd).getTargetCodec());
+    }
+
+    @Test
+    void eac3TrackDefaultsToCopy() {
+        var eac3 = stream(StreamType.AUDIO, "eac3", null, false);
+
+        assertEquals(AudioCodec.COPY, TrackPlan.defaultsFor(eac3).getTargetCodec());
     }
 
     @Test
