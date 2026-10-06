@@ -1,21 +1,25 @@
 package pl.audiofix.ui;
 
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
+import pl.audiofix.ffmpeg.FfprobeService;
 import pl.audiofix.model.AudioCodec;
+import pl.audiofix.model.MediaInfo;
+import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.TrackPlan;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.List;
+
+import static pl.audiofix.AudioFixApp.WINDOW_TITLE;
 
 public class MainController {
 
@@ -47,10 +51,25 @@ public class MainController {
     @FXML private TextArea logArea;
 
     private FfmpegPaths ffmpegPaths;
+    private MediaInfo mediaInfo;
+    private List<TrackPlan> plans = List.of();
+    private File lastDirectory;
 
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
         this.ffmpegPaths = ffmpegPaths;
+    }
+
+    void showMedia(MediaInfo info) {
+
+        mediaInfo = info;
+        plans = info.streams().stream()
+                .map(TrackPlan::defaultsFor)
+                .toList();
+        trackTable.getItems().setAll(plans.stream()
+                .filter(plan -> TrackTableConfigurer.isShown(plan.getStream().type()))
+                .toList());
+        logArea.appendText("Wczytano " + info.path().getFileName() + ": " + info.streams().size() + " ścieżek" + System.lineSeparator());
     }
 
     @FXML
@@ -58,12 +77,65 @@ public class MainController {
 
         trackTable.setPlaceholder(new Label("Dodaj plik, aby zobaczyć jego ścieżki"));
         cancelButton.setDisable(true);
+
+        TrackTableConfigurer.configureTable(trackTable);
+        TrackTableConfigurer.configureKeep(keepColumn);
+        TrackTableConfigurer.configureReadOnly(indexColumn, StreamInfo::index);
+        TrackTableConfigurer.configureReadOnly(typeColumn, s -> TrackTableConfigurer.typeLabel(s.type()));
+        TrackTableConfigurer.configureReadOnly(codecColumn, StreamInfo::codecLabel);
+        TrackTableConfigurer.configureReadOnly(channelsColumn, s -> s.isAudio() ? s.channels() : null);
+        TrackTableConfigurer.configureReadOnly(languageColumn, StreamInfo::language);
+        TrackTableConfigurer.configureReadOnly(titleColumn, StreamInfo::title);
+        TrackTableConfigurer.configureAction(actionColumn);
     }
 
     @FXML
     private void onAddFiles() {
 
-        log.info("Add files clicked");
+        FileChooser chooser = new  FileChooser();
+        chooser.setTitle("Wybierz film");
+        chooser.getExtensionFilters()
+                .add(new FileChooser.ExtensionFilter("Filmy (*.mkv, *.mp4, *.m2ts)", "*.mkv", "*.mp4", "*.m2ts"));
+
+        if (lastDirectory != null && lastDirectory.isDirectory()) {
+            chooser.setInitialDirectory(lastDirectory);
+        }
+
+        File file = chooser.showOpenDialog(window());
+        if (file == null) {
+            return;
+        }
+        lastDirectory = file.getParentFile();
+        probe(file.toPath());
+    }
+
+    private void probe(Path file) {
+
+        FfprobeService service = new FfprobeService(ffmpegPaths);
+        Task<MediaInfo> task = new Task<>() {
+            @Override
+            protected MediaInfo call() throws Exception {
+                return service.probe(file);
+            }
+        };
+
+        task.setOnSucceeded(event -> showMedia(task.getValue()));
+        task.setOnFailed(event -> showError("Nie można odczytać pliku", task.getException()));
+        addFilesButton.disableProperty().bind(task.runningProperty());
+
+        Thread.ofVirtual().start(task);
+    }
+
+    private void showError(String header, Throwable error) {
+
+        log.warn(header, error);
+
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.initOwner(window());
+        alert.setTitle(WINDOW_TITLE);
+        alert.setHeaderText(header);
+        alert.setContentText(error.getMessage());
+        alert.show();
     }
 
     @FXML

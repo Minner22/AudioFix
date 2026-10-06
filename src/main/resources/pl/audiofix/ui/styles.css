@@ -1,1 +1,8 @@
 /* AudioFix */
+.table-row-cell:needs-conversion {
+    -fx-background: #ffe0b2;
+}
+
+.table-row-cell:removed > .table-cell {
+    -fx-opacity: 0.45;
+}
