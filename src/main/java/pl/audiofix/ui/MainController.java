@@ -193,7 +193,11 @@ public class MainController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Zapisz jako");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Matroska (*.mkv)", "*.mkv"));
-        chooser.setInitialDirectory(output.getParent().toFile());
+
+        File initialDir = output.getParent().toFile();
+        if (initialDir.isDirectory()) {
+            chooser.setInitialDirectory(initialDir);
+        }
         chooser.setInitialFileName(output.getFileName().toString());
 
         File file = chooser.showSaveDialog(window());
