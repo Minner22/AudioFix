@@ -3,16 +3,17 @@ package pl.audiofix.ui;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.css.PseudoClass;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
+import pl.audiofix.model.TrackPlans;
 
+import java.util.List;
 import java.util.function.Function;
 
 public final class TrackTableConfigurer {
@@ -58,6 +59,12 @@ public final class TrackTableConfigurer {
                 setEditable(plan != null && plan.getStream().isAudio());
             }
         });
+    }
+
+    public static void configureDefault(TableColumn<TrackPlan, Boolean> column) {
+
+        column.setCellValueFactory(cell -> cell.getValue().makeDefaultProperty());
+        column.setCellFactory(c -> new DefaultCell());
     }
 
     public static <T> void configureReadOnly(TableColumn<TrackPlan, T> column, Function<StreamInfo, T> getter) {
@@ -117,4 +124,49 @@ public final class TrackTableConfigurer {
             pseudoClassStateChanged(REMOVED, observed != null && !observed.isKeep());
         }
     }
+
+    private static final class DefaultCell extends TableCell<TrackPlan, Boolean> {
+
+        private final RadioButton radio = new RadioButton();
+
+        DefaultCell() {
+
+            radio.setOnAction(event -> choose());
+            setAlignment(Pos.CENTER);
+        }
+
+        @Override
+        protected void updateItem(Boolean isDefault, boolean empty) {
+
+            super.updateItem(isDefault, empty);
+
+            TrackPlan plan = getTableRow() == null
+                    ? null
+                    : getTableRow().getItem();
+
+            if (empty || plan == null || !isRemovable(plan.getStream().type())) {
+                setGraphic(null);
+                return;
+            }
+
+            radio.setSelected(Boolean.TRUE.equals(isDefault));
+            setGraphic(radio);
+        }
+
+        private void choose() {
+
+            TrackPlan plan = getTableRow().getItem();
+            List<TrackPlan> plans = getTableView().getItems();
+
+            if (plan.getStream().type() == StreamType.SUBTITLE && plan.isMakeDefault()) {
+                TrackPlans.clearSubtitleDefault(plans);
+            }
+            else {
+                TrackPlans.setDefault(plans, plan);
+            }
+
+            radio.setSelected(plan.isMakeDefault());
+        }
+    }
+
 }

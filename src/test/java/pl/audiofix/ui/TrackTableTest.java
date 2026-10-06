@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -175,6 +176,100 @@ class TrackTableTest {
         assertEquals(AudioCodec.EAC3, cellData("actionColumn", 2));
     }
 
+    // ---------------------------------------------------------------- default column (#9)
+
+    @Test
+    void defaultRadioIsShownForAudioAndSubtitlesOnly() {
+        assertNull(cell("defaultColumn", 0).getGraphic(), "video has no default radio");
+        assertNotNull(radioIn(cell("defaultColumn", 1)));
+        assertNotNull(radioIn(cell("defaultColumn", 4)));
+    }
+
+    @Test
+    void defaultRadioReflectsPlan() {
+        assertTrue(radioIn(cell("defaultColumn", 1)).isSelected(), "TrueHD is default in the file");
+        assertFalse(radioIn(cell("defaultColumn", 2)).isSelected());
+        assertFalse(radioIn(cell("defaultColumn", 4)).isSelected());
+    }
+
+    @Test
+    void clickingAudioRadioMovesDefault() throws Exception {
+        onFxThread(() -> {
+            radioIn(cell("defaultColumn", 3)).fire();   // DTS
+            FxTestSupport.layout(root);
+        });
+
+        assertTrue(plan(3).isMakeDefault());
+        assertFalse(plan(1).isMakeDefault());
+        assertTrue(radioIn(cell("defaultColumn", 3)).isSelected());
+        assertFalse(radioIn(cell("defaultColumn", 1)).isSelected());
+    }
+
+    @Test
+    void clickingSelectedAudioRadioKeepsItDefault() throws Exception {
+        onFxThread(() -> {
+            radioIn(cell("defaultColumn", 1)).fire();
+            FxTestSupport.layout(root);
+        });
+
+        assertTrue(plan(1).isMakeDefault());
+        assertTrue(radioIn(cell("defaultColumn", 1)).isSelected(), "audio always needs a default");
+    }
+
+    @Test
+    void subtitleRadioTogglesOnAndOff() throws Exception {
+        onFxThread(() -> {
+            radioIn(cell("defaultColumn", 4)).fire();
+            FxTestSupport.layout(root);
+        });
+        assertTrue(plan(4).isMakeDefault());
+
+        onFxThread(() -> {
+            radioIn(cell("defaultColumn", 4)).fire();
+            FxTestSupport.layout(root);
+        });
+        assertFalse(plan(4).isMakeDefault());
+        assertFalse(radioIn(cell("defaultColumn", 4)).isSelected());
+    }
+
+    @Test
+    void unkeepingDefaultAudioMovesDefaultToFirstKeptAudio() throws Exception {
+        onFxThread(() -> {
+            checkBoxIn(cell("keepColumn", 1)).fire();   // user removes TrueHD
+            FxTestSupport.layout(root);
+        });
+
+        assertFalse(plan(1).isMakeDefault());
+        assertTrue(plan(2).isMakeDefault());
+        assertTrue(radioIn(cell("defaultColumn", 2)).isSelected());
+    }
+
+    @Test
+    void choosingRemovedTrackAsDefaultKeepsItAgain() throws Exception {
+        onFxThread(() -> {
+            plan(3).setKeep(false);
+            FxTestSupport.layout(root);
+            radioIn(cell("defaultColumn", 3)).fire();
+            FxTestSupport.layout(root);
+        });
+
+        assertTrue(plan(3).isKeep());
+        assertTrue(plan(3).isMakeDefault());
+    }
+
+    @Test
+    void fileWithSeveralDefaultAudioShowsOnlyOneDefault() throws Exception {
+        MediaInfo twoDefaults = new MediaInfo(Path.of("two.mkv"), 10, List.of(
+                new StreamInfo(0, StreamType.VIDEO, "h264", null, 0, null, "und", null, true),
+                new StreamInfo(1, StreamType.AUDIO, "dts", null, 6, null, "eng", null, true),
+                new StreamInfo(2, StreamType.AUDIO, "ac3", null, 6, null, "pol", null, true)));
+
+        onFxThread(() -> controller.showMedia(twoDefaults));
+
+        assertTrue(plan(1).isMakeDefault());
+        assertFalse(plan(2).isMakeDefault());
+    }
+
     // ---------------------------------------------------------------- row styles
 
     @Test
@@ -251,6 +346,12 @@ class TrackTableTest {
         Node graphic = cell.getGraphic();
         assertNotNull(graphic, "keep cell has no checkbox");
         return (CheckBox) graphic;
+    }
+
+    private static RadioButton radioIn(TableCell<?, ?> cell) {
+        Node graphic = cell.getGraphic();
+        assertNotNull(graphic, "default cell has no radio button");
+        return (RadioButton) graphic;
     }
 
     private boolean hasPseudoClass(int streamIndex, PseudoClass pseudoClass) {

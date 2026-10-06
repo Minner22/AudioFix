@@ -14,6 +14,7 @@ import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.TrackPlan;
+import pl.audiofix.model.TrackPlans;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -63,9 +64,14 @@ public class MainController {
     void showMedia(MediaInfo info) {
 
         mediaInfo = info;
-        plans = info.streams().stream()
+
+        List<TrackPlan> loaded = info.streams().stream()
                 .map(TrackPlan::defaultsFor)
                 .toList();
+        TrackPlans.normalizeDefaults(loaded);
+        loaded.forEach(plan -> plan.keepProperty().addListener(observable -> TrackPlans.normalizeDefaults(loaded)));
+
+        plans = loaded;
         trackTable.getItems().setAll(plans.stream()
                 .filter(plan -> TrackTableConfigurer.isShown(plan.getStream().type()))
                 .toList());
@@ -87,6 +93,7 @@ public class MainController {
         TrackTableConfigurer.configureReadOnly(languageColumn, StreamInfo::language);
         TrackTableConfigurer.configureReadOnly(titleColumn, StreamInfo::title);
         TrackTableConfigurer.configureAction(actionColumn);
+        TrackTableConfigurer.configureDefault(defaultColumn);
     }
 
     @FXML
@@ -138,6 +145,18 @@ public class MainController {
         alert.show();
     }
 
+    private void showWarning(String header, String content) {
+
+        log.warn("{}: {}", header, content);
+
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.initOwner(window());
+        alert.setTitle(WINDOW_TITLE);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.show();
+    }
+
     @FXML
     private void onFfmpegSettings() {
 
@@ -163,7 +182,16 @@ public class MainController {
     @FXML
     private void onStart() {
 
-        log.info("Start clicked");
+        List<String> errors = plans.isEmpty()
+                ? List.of("Najpierw dodaj plik.")
+                : TrackPlans.validate(plans);
+
+        if (!errors.isEmpty()) {
+            showWarning("Nie można rozpocząć konwersji", String.join(System.lineSeparator(), errors));
+            return;
+        }
+
+        log.info("Plan OK");
     }
 
     @FXML
