@@ -92,7 +92,7 @@ public class MainController {
     @FXML
     private void onAddFiles() {
 
-        FileChooser chooser = new  FileChooser();
+        FileChooser chooser = new FileChooser();
         chooser.setTitle("Wybierz film");
         chooser.getExtensionFilters()
                 .add(new FileChooser.ExtensionFilter("Filmy (*.mkv, *.mp4, *.m2ts)", "*.mkv", "*.mp4", "*.m2ts"));

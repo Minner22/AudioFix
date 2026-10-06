@@ -63,6 +63,7 @@ public final class TrackTableConfigurer {
     public static <T> void configureReadOnly(TableColumn<TrackPlan, T> column, Function<StreamInfo, T> getter) {
 
         column.setCellValueFactory(cell -> new ReadOnlyObjectWrapper<>(getter.apply(cell.getValue().getStream())));
+        column.setEditable(false);
     }
 
     static String typeLabel(StreamType type) {
@@ -81,7 +82,7 @@ public final class TrackTableConfigurer {
         return type == StreamType.AUDIO || type == StreamType.SUBTITLE;
     }
 
-    public static boolean isShown(StreamType type) {
+    static boolean isShown(StreamType type) {
 
         return type == StreamType.VIDEO
                 || type == StreamType.AUDIO
