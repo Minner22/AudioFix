@@ -1,10 +1,8 @@
 package pl.audiofix.ui;
 
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.ListView;
@@ -15,11 +13,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import pl.audiofix.AudioFixApp;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,24 +33,14 @@ class MainViewTest {
 
     @BeforeAll
     static void loadView() throws Exception {
-        startJavaFx();
+        FxTestSupport.startJavaFx();
 
-        CompletableFuture<Void> loaded = new CompletableFuture<>();
-        Platform.runLater(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
-                root = loader.load();
-                controller = loader.getController();
-                // nodes inside ToolBar/SplitPane are created by their skins - only after CSS and layout pass
-                new Scene(root);
-                root.applyCss();
-                root.layout();
-                loaded.complete(null);
-            } catch (Exception e) {
-                loaded.completeExceptionally(e);
-            }
+        // a typo in fx:id, onAction or fx:controller fails here
+        FxTestSupport.onFxThread(() -> {
+            FXMLLoader loader = FxTestSupport.loadMainView();
+            root = loader.getRoot();
+            controller = loader.getController();
         });
-        loaded.get(10, TimeUnit.SECONDS);   // a typo in fx:id, onAction or fx:controller fails here
     }
 
     @Test
@@ -126,16 +111,5 @@ class MainViewTest {
         Node node = root.lookup("#" + id);
         assertNotNull(node, "no node with fx:id=" + id);
         return assertInstanceOf(type, node, "wrong type for " + id);
-    }
-
-    private static void startJavaFx() throws InterruptedException {
-        CompletableFuture<Void> started = new CompletableFuture<>();
-        try {
-            Platform.startup(() -> started.complete(null));
-        } catch (IllegalStateException alreadyStarted) {
-            started.complete(null);
-        }
-        Platform.setImplicitExit(false);
-        started.orTimeout(10, TimeUnit.SECONDS).join();
     }
 }
