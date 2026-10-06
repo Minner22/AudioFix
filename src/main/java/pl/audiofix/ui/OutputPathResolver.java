@@ -1,0 +1,50 @@
+package pl.audiofix.ui;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+
+public final class OutputPathResolver {
+
+    static final String SUFFIX = "_fixed";
+    static final String EXTENSION = ".mkv";
+
+    private OutputPathResolver() {
+    }
+
+    public static Path defaultOutput(Path input) {
+
+        String base = withoutExtension(input.getFileName().toString()) + SUFFIX;
+        Path dir = input.toAbsolutePath().getParent();
+
+        Path candidate = dir.resolve(base + EXTENSION);
+
+        for (int n = 1; Files.exists(candidate); n++) {
+            candidate = dir.resolve(base + " (" + n + ")" + EXTENSION);
+        }
+
+        return candidate;
+    }
+
+    public static Path withMkvExtension(Path chosen) {
+
+        String name = chosen.getFileName().toString();
+
+        return name.toLowerCase(Locale.ROOT).endsWith(EXTENSION)
+                ? chosen
+                : chosen.resolveSibling(name + EXTENSION);
+    }
+
+    public static boolean isSameFile(Path a, Path b) {
+
+        return a.toAbsolutePath().normalize().toString()
+                .equalsIgnoreCase(b.toAbsolutePath().normalize().toString());
+    }
+
+    private static String withoutExtension(String name) {
+
+        int dot = name.lastIndexOf('.');
+
+        return dot > 0 ? name.substring(0, dot) : name;
+    }
+}
