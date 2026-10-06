@@ -55,6 +55,7 @@ public class MainController {
     private MediaInfo mediaInfo;
     private List<TrackPlan> plans = List.of();
     private File lastDirectory;
+    private Path output;
 
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
@@ -72,6 +73,10 @@ public class MainController {
         loaded.forEach(plan -> plan.keepProperty().addListener(observable -> TrackPlans.normalizeDefaults(loaded)));
 
         plans = loaded;
+
+        setOutput(OutputPathResolver.defaultOutput(info.path()));
+        changeOutputButton.setDisable(false);
+
         trackTable.getItems().setAll(plans.stream()
                 .filter(plan -> TrackTableConfigurer.isShown(plan.getStream().type()))
                 .toList());
@@ -94,6 +99,9 @@ public class MainController {
         TrackTableConfigurer.configureReadOnly(titleColumn, StreamInfo::title);
         TrackTableConfigurer.configureAction(actionColumn);
         TrackTableConfigurer.configureDefault(defaultColumn);
+
+        outputField.setEditable(false);
+        changeOutputButton.setDisable(true);
     }
 
     @FXML
@@ -157,6 +165,12 @@ public class MainController {
         alert.show();
     }
 
+    private void setOutput(Path path) {
+
+        output = path;
+        outputField.setText(path.toString());
+    }
+
     @FXML
     private void onFfmpegSettings() {
 
@@ -176,7 +190,29 @@ public class MainController {
     @FXML
     private void onChangeOutput() {
 
-        log.info("Change output clicked");
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Zapisz jako");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Matroska (*.mkv)", "*.mkv"));
+
+        File initialDir = output.getParent().toFile();
+        if (initialDir.isDirectory()) {
+            chooser.setInitialDirectory(initialDir);
+        }
+        chooser.setInitialFileName(output.getFileName().toString());
+
+        File file = chooser.showSaveDialog(window());
+        if (file == null) {
+            return;
+        }
+
+        Path chosen = OutputPathResolver.withMkvExtension(file.toPath());
+        if (OutputPathResolver.isSameFile(chosen, mediaInfo.path())) {
+            showWarning("Nieprawidłowy plik wyjściowy",
+                    "Plik wyjściowy nie może być tym samym plikiem co film źródłowy");
+            return;
+        }
+
+        setOutput(chosen);
     }
 
     @FXML
