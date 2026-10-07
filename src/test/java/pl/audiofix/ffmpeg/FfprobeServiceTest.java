@@ -11,13 +11,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Integration tests with the real ffprobe. Skipped when ffmpeg cannot be found
@@ -33,11 +31,10 @@ class FfprobeServiceTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        Optional<FfmpegPaths> paths = new FfmpegLocator().locate();
-        assumeTrue(paths.isPresent(), "ffmpeg not found, skipping ffprobe integration tests");
+        FfmpegPaths paths = TestMedia.requireFfmpeg();
 
-        service = new FfprobeService(paths.get());
-        sample = TestMedia.generateSample(paths.get().ffmpeg(), dir);
+        service = new FfprobeService(paths);
+        sample = TestMedia.generateSample(paths.ffmpeg(), dir);
     }
 
     @Test

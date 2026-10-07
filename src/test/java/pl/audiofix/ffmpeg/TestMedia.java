@@ -3,10 +3,13 @@ package pl.audiofix.ffmpeg;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Generates small media files with the real ffmpeg for integration tests.
@@ -14,6 +17,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public final class TestMedia {
 
     private TestMedia() {
+    }
+
+    /**
+     * ffmpeg for integration tests. Locally the tests are skipped when ffmpeg is not installed;
+     * on CI (GitHub Actions sets {@code CI=true}) a missing ffmpeg is an error, so a broken install
+     * step cannot turn the build green with integration tests silently skipped.
+     */
+    public static FfmpegPaths requireFfmpeg() {
+        Optional<FfmpegPaths> found = new FfmpegLocator().locate();
+        if (found.isEmpty() && "true".equalsIgnoreCase(System.getenv("CI"))) {
+            fail("ffmpeg not found on CI - check the step that installs ffmpeg and adds it to PATH");
+        }
+        assumeTrue(found.isPresent(), "ffmpeg not found, skipping ffmpeg integration tests");
+        return found.get();
     }
 
     /**

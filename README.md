@@ -1,5 +1,7 @@
 # AudioFix
 
+[![Build](https://github.com/Minner22/AudioFix/actions/workflows/build.yml/badge.svg)](https://github.com/Minner22/AudioFix/actions/workflows/build.yml)
+
 Prosta aplikacja desktopowa do poprawiania ścieżek dźwiękowych w filmach tak, żeby dało się je odtworzyć na telewizorze,
 który nie obsługuje wszystkich formatów audio (najczęściej **DTS**).
 

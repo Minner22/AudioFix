@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -24,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Integration tests with the real ffmpeg. Skipped when ffmpeg cannot be found.
@@ -39,10 +37,7 @@ class FfmpegRunnerTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        Optional<FfmpegPaths> found = new FfmpegLocator().locate();
-        assumeTrue(found.isPresent(), "ffmpeg not found, skipping ffmpeg integration tests");
-
-        paths = found.get();
+        paths = TestMedia.requireFfmpeg();
         sample = new FfprobeService(paths).probe(TestMedia.generateSample(paths.ffmpeg(), dir));
     }
 

@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
-import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ffmpeg.FfprobeService;
 import pl.audiofix.ffmpeg.TestMedia;
@@ -29,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
@@ -37,7 +35,6 @@ import java.util.function.BooleanSupplier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static pl.audiofix.ui.FxTestSupport.onFxThread;
 
 /**
@@ -68,9 +65,7 @@ class ConversionTest {
 
     @BeforeAll
     static void setUpAll() throws Exception {
-        Optional<FfmpegPaths> found = new FfmpegLocator().locate();
-        assumeTrue(found.isPresent(), "ffmpeg not found, skipping conversion UI tests");
-        paths = found.get();
+        paths = TestMedia.requireFfmpeg();
         sample = TestMedia.generateSample(paths.ffmpeg(), sampleDir);
         FxTestSupport.startJavaFx();
     }
