@@ -12,13 +12,11 @@ import pl.audiofix.model.TrackPlan;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Runs commands from CommandBuilder with the real ffmpeg and checks the result with ffprobe.
@@ -37,10 +35,7 @@ class CommandBuilderIntegrationTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        Optional<FfmpegPaths> found = new FfmpegLocator().locate();
-        assumeTrue(found.isPresent(), "ffmpeg not found, skipping ffmpeg integration tests");
-
-        paths = found.get();
+        paths = TestMedia.requireFfmpeg();
         probe = new FfprobeService(paths);
         sample = probe.probe(TestMedia.generateSample(paths.ffmpeg(), dir));
     }
