@@ -66,11 +66,18 @@ które tego wymagają, a reszta jest kopiowana.
 
 ## Roadmapa
 
-Zadania prowadzone są w projekcie [AudioFix na GitHubie](https://github.com/users/Minner22/projects/4).
+Zadania prowadzone są w projekcie [AudioFix na GitHubie](https://github.com/users/Minner22/projects/4),
+a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/releases).
 
-- **Etap 0, Fundament:** szkielet projektu Maven + JavaFX/FXML.
-- **Etap 1, Analiza pliku:** model domenowy, wykrywanie ffmpeg, odczyt ścieżek przez ffprobe.
-- **Etap 2, Silnik konwersji:** budowanie komendy ffmpeg, uruchamianie z postępem i anulowaniem.
-- **Etap 3, UI pojedynczego pliku:** tabela ścieżek, podświetlanie DTS, ścieżki domyślne, plik wyjściowy, pierwsza działająca konwersja.
-- **Etap 4, Kolejka:** przetwarzanie wielu plików po kolei.
-- **Etap 5, Dystrybucja:** instalator `.exe` przez `jpackage`.
+- ✅ **0.1.0, MVP:** wczytanie filmu, tabela ścieżek z wyróżnieniem DTS/TrueHD, wybór akcji i ścieżek
+  domyślnych, plik wyjściowy, konwersja z postępem, logiem i anulowaniem.
+- **0.2.0, szybka konwersja:** konwersja jednym kliknięciem (jak dawna ręczna komenda ffmpeg),
+  tytuły przekonwertowanych ścieżek zgodne z nowym formatem, wersja aplikacji w tytule okna,
+  automatyczne testy (CI) przy każdej zmianie.
+- **0.3.0, kolejka:** wiele plików przetwarzanych po kolei, postęp każdego pliku, przeciąganie plików na okno.
+- **0.4.0, wygląd:** nowy, płaski wygląd wg projektu (jasny i ciemny motyw zgodny z Windowsem),
+  szacowany czas do końca konwersji, kolorowana konsola logów.
+- **1.0.0, instalator:** instalator `.exe` z wbudowaną Javą i ffmpeg, automatyczne wydania na GitHubie.
+- **1.1.0, wielojęzyczność:** interfejs po polsku i angielsku z wyborem języka.
+
+Proces wydawania nowych wersji: [RELEASING.md](RELEASING.md).
