@@ -17,6 +17,8 @@ public class AudioFixApp extends Application {
 
     public static final String WINDOW_TITLE = "AudioFix";
 
+    private MainController controller;
+
     public static void main(String[] args) {
 
         launch(args);
@@ -33,12 +35,19 @@ public class AudioFixApp extends Application {
 
         FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
         Parent root = loader.load();
-
-        MainController controller = loader.getController();
+        controller = loader.getController();
         controller.setFfmpegPaths(ffmpegPaths.get());
 
         primaryStage.setScene(new Scene(root, 1100, 700));
         primaryStage.setTitle(WINDOW_TITLE);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() throws Exception {
+
+        if (controller != null) {
+            controller.shutdown();
+        }
     }
 }

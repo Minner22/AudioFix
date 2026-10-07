@@ -7,6 +7,7 @@ import pl.audiofix.model.TrackPlan;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CommandBuilder {
 
@@ -32,6 +33,13 @@ public class CommandBuilder {
         args.add(output.toString());
 
         return args;
+    }
+
+    public static String toCommandLine(List<String> args) {
+
+        return args.stream()
+                .map(arg -> arg.contains(" ") ? "\"" + arg + "\"" : arg)
+                .collect(Collectors.joining(" "));
     }
 
     private static List<String> inputArgs(Path ffmpeg, Path input) {

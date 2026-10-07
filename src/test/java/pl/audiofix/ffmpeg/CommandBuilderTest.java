@@ -253,6 +253,28 @@ class CommandBuilderTest {
         assertTrue(args.stream().noneMatch(a -> a.startsWith("-disposition:v")));
     }
 
+    // ---------------------------------------------------------------- toCommandLine (#11)
+
+    @Test
+    void commandLineJoinsArgumentsWithSpaces() {
+        assertEquals("ffmpeg -i in.mkv -c copy out.mkv",
+                CommandBuilder.toCommandLine(List.of("ffmpeg", "-i", "in.mkv", "-c", "copy", "out.mkv")));
+    }
+
+    @Test
+    void commandLineQuotesArgumentsWithSpaces() {
+        assertEquals("ffmpeg -i \"D:\\Filmy\\Mój film.mkv\" \"D:\\Filmy\\Mój film_fixed.mkv\"",
+                CommandBuilder.toCommandLine(List.of("ffmpeg", "-i", "D:\\Filmy\\Mój film.mkv", "D:\\Filmy\\Mój film_fixed.mkv")));
+    }
+
+    @Test
+    void commandLineOfBuiltCommandStartsWithFfmpegAndEndsWithOutput() {
+        String line = CommandBuilder.toCommandLine(builder.build(FFMPEG, INPUT, OUTPUT, typicalPlans()));
+
+        assertTrue(line.startsWith("C:\\ffmpeg\\bin\\ffmpeg.exe -hide_banner"), line);
+        assertTrue(line.endsWith("\"D:\\Filmy\\Mój film_fixed.mkv\""), line);
+    }
+
     // ---------------------------------------------------------------- helpers
 
     /** 0 video, 1 DTS (default), 2 AC3, 3 subtitles - with defaults from TrackPlan.defaultsFor. Mutable. */

@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Generates small media files with the real ffmpeg for integration tests.
  */
-final class TestMedia {
+public final class TestMedia {
 
     private TestMedia() {
     }
@@ -21,7 +21,7 @@ final class TestMedia {
      * 0 video (mpeg4), 1 DTS (eng, default, title "DTS ąę"), 2 AC3 (pol), 3 SRT subtitles (pol).
      * File name has spaces and Polish characters on purpose.
      */
-    static Path generateSample(Path ffmpeg, Path dir) throws IOException, InterruptedException {
+    public static Path generateSample(Path ffmpeg, Path dir) throws IOException, InterruptedException {
         Path subs = Files.writeString(dir.resolve("subs.srt"), "1\n00:00:00,000 --> 00:00:01,000\nTest\n");
         Path out = dir.resolve("Film ąę test.mkv");
 

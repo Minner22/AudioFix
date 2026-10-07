@@ -7,9 +7,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pl.audiofix.ffmpeg.FfmpegLocator;
-import pl.audiofix.ffmpeg.FfmpegPaths;
-import pl.audiofix.ffmpeg.FfprobeService;
+import pl.audiofix.ffmpeg.*;
 import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
@@ -56,10 +54,18 @@ public class MainController {
     private List<TrackPlan> plans = List.of();
     private File lastDirectory;
     private Path output;
+    private ConversionTask conversion;
 
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
         this.ffmpegPaths = ffmpegPaths;
+    }
+
+    public void shutdown() {
+
+        if (conversion != null && conversion.isRunning()) {
+            conversion.stopNow();
+        }
     }
 
     void showMedia(MediaInfo info) {
@@ -121,10 +127,10 @@ public class MainController {
             return;
         }
         lastDirectory = file.getParentFile();
-        probe(file.toPath());
+        loadFile(file.toPath());
     }
 
-    private void probe(Path file) {
+    void loadFile(Path file) {
 
         FfprobeService service = new FfprobeService(ffmpegPaths);
         Task<MediaInfo> task = new Task<>() {
@@ -134,41 +140,18 @@ public class MainController {
             }
         };
 
-        task.setOnSucceeded(event -> showMedia(task.getValue()));
-        task.setOnFailed(event -> showError("Nie można odczytać pliku", task.getException()));
-        addFilesButton.disableProperty().bind(task.runningProperty());
+        task.setOnSucceeded(event -> {
+            addFilesButton.setDisable(false);
+            showMedia(task.getValue());
+        });
+        task.setOnFailed(event -> {
+            addFilesButton.setDisable(false);
+            showError("Nie można odczytać pliku", task.getException());
+        });
+
+        addFilesButton.setDisable(true);
 
         Thread.ofVirtual().start(task);
-    }
-
-    private void showError(String header, Throwable error) {
-
-        log.warn(header, error);
-
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.initOwner(window());
-        alert.setTitle(WINDOW_TITLE);
-        alert.setHeaderText(header);
-        alert.setContentText(error.getMessage());
-        alert.show();
-    }
-
-    private void showWarning(String header, String content) {
-
-        log.warn("{}: {}", header, content);
-
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.initOwner(window());
-        alert.setTitle(WINDOW_TITLE);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.show();
-    }
-
-    private void setOutput(Path path) {
-
-        output = path;
-        outputField.setText(path.toString());
     }
 
     @FXML
@@ -227,13 +210,98 @@ public class MainController {
             return;
         }
 
-        log.info("Plan OK");
+        startConversion();
     }
 
     @FXML
     private void onCancel() {
 
-        log.info("Cancel clicked");
+        if (conversion != null) {
+            conversion.cancel();
+        }
+    }
+
+    private void startConversion() {
+
+        List<String> command = new CommandBuilder().build(ffmpegPaths.ffmpeg(), mediaInfo.path(), output, plans);
+        appendLog(CommandBuilder.toCommandLine(command));
+
+        ConversionTask task = new ConversionTask(command, output, mediaInfo.durationSec(), this::appendLog);
+        task.setOnSucceeded(event -> {
+            setRunning(false);
+            appendLog("Gotowe: " + task.output());
+            showInfo("Konwersja zakończona", task.output().toString());
+        });
+        task.setOnFailed(event -> {
+            setRunning(false);
+            resetProgress();
+            showError("Konwersja nie powiodła się", task.getException());
+        });
+        task.setOnCancelled(event -> {
+            setRunning(false);
+            resetProgress();
+            appendLog("Anulowano");
+        });
+
+        conversion = task;
+        progressBar.progressProperty().bind(task.progressProperty());
+        setRunning(true);
+        Thread.ofVirtual().start(task);
+    }
+
+    private void resetProgress() {
+
+        progressBar.progressProperty().unbind();
+        progressBar.setProgress(0);
+    }
+
+    private void setRunning(boolean running) {
+
+        startButton.setDisable(running);
+        cancelButton.setDisable(!running);
+        addFilesButton.setDisable(running);
+        ffmpegSettingsButton.setDisable(running);
+        changeOutputButton.setDisable(running);
+        trackTable.setDisable(running);
+    }
+
+    private void appendLog(String line) {
+
+        logArea.appendText(line + System.lineSeparator());
+    }
+
+    private void showError(String header, Throwable error) {
+
+        log.warn(header, error);
+        showAlert(Alert.AlertType.ERROR, header, error.getMessage());
+    }
+
+    private void showWarning(String header, String content) {
+
+        log.warn("{}: {}", header, content);
+        showAlert(Alert.AlertType.WARNING, header, content);
+    }
+
+    private void showInfo(String header, String content) {
+
+        log.info("{}: {}", header, content);
+        showAlert(Alert.AlertType.INFORMATION, header, content);
+    }
+
+    private void showAlert(Alert.AlertType type, String header, String content) {
+
+        Alert alert = new Alert(type);
+        alert.initOwner(window());
+        alert.setTitle(WINDOW_TITLE);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.show();
+    }
+
+    private void setOutput(Path path) {
+
+        output = path;
+        outputField.setText(path.toString());
     }
 
     private Window window() {
