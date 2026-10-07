@@ -73,7 +73,7 @@ a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/relea
   domyślnych, plik wyjściowy, konwersja z postępem, logiem i anulowaniem.
 - **0.2.0, szybka konwersja:** konwersja jednym kliknięciem (jak dawna ręczna komenda ffmpeg),
   tytuły przekonwertowanych ścieżek zgodne z nowym formatem, wersja aplikacji w tytule okna,
-  automatyczne testy (CI) przy każdej zmianie.
+  okno „O programie” z wersjami i licencjami, automatyczne testy (CI) przy każdej zmianie.
 - **0.3.0, kolejka:** wiele plików przetwarzanych po kolei, postęp każdego pliku, przeciąganie plików na okno.
 - **0.4.0, wygląd:** nowy, płaski wygląd wg projektu (jasny i ciemny motyw zgodny z Windowsem),
   szacowany czas do końca konwersji, kolorowana konsola logów.

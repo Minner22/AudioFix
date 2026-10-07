@@ -1,0 +1,20 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Nowe funkcje
+      labels:
+        - enhancement
+    - title: Poprawki
+      labels:
+        - bug
+    - title: Dokumentacja
+      labels:
+        - documentation
+    - title: Build i proces wydań
+      labels:
+        - infrastructure
+    - title: Inne
+      labels:
+        - "*"
