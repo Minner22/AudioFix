@@ -10,6 +10,7 @@
         <ToolBar>
             <Button fx:id="addFilesButton" text="Dodaj pliki…" onAction="#onAddFiles"/>
             <Button fx:id="ffmpegSettingsButton" text="Ustawienia ffmpeg" onAction="#onFfmpegSettings"/>
+            <Button fx:id="aboutButton" text="O programie" onAction="#onAbout"/>
         </ToolBar>
     </top>
     <center>

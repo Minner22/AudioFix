@@ -7,8 +7,8 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 
 public class FfmpegLocator {
@@ -16,6 +16,7 @@ public class FfmpegLocator {
     private static final Logger log = LoggerFactory.getLogger(FfmpegLocator.class);
 
     static final String FFMPEG_EXE = "ffmpeg.exe";
+    private static final Duration VERSION_CHECK_TIMEOUT = Duration.ofSeconds(5);
     private static final String PREF_KEY = "ffmpegPath";
 
     private final Preferences preferences;
@@ -113,32 +114,7 @@ public class FfmpegLocator {
 
     boolean ffmpegVersionCheckOk(Path ffmpegPath) {
 
-        try {
-            Process p = new ProcessBuilder(ffmpegPath.toString(), "-version")
-                    .redirectErrorStream(true)
-                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-                    .start();
-
-            boolean finished = p.waitFor(5, TimeUnit.SECONDS);
-
-            if (!finished) {
-                p.destroyForcibly();
-                log.warn("ffmpeg -version timed out: {}", ffmpegPath);
-                return false;
-            }
-
-            int exitCode = p.exitValue();
-            if (exitCode != 0) {
-                log.warn("ffmpeg -version exited with code {}: {}", exitCode, ffmpegPath);
-            }
-            return exitCode == 0;
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
-            return false;
-        } catch (Exception e) {
-            log.warn("Cannot run ffmpeg -version: {}", ffmpegPath, e);
-            return false;
-        }
+        return FfmpegVersion.firstLine(ffmpegPath, VERSION_CHECK_TIMEOUT).isPresent();
     }
 
     private static boolean isComplete(FfmpegPaths paths) {

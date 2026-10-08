@@ -43,6 +43,7 @@ public class AudioFixApp extends Application {
         Parent root = loader.load();
         controller = loader.getController();
         controller.setFfmpegPaths(ffmpegPaths.get());
+        controller.setHostServices(getHostServices());
 
         primaryStage.setScene(new Scene(root, 1100, 700));
         primaryStage.setTitle(windowTitle());
