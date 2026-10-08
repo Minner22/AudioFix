@@ -244,7 +244,7 @@ public class MainController {
     private void onQuickConvert() {
 
         if (mediaInfo == null) {
-            showWarning("Nie można rozpocząć konwersji", "Najpierw dodaj plik");
+            showWarning("Nie można rozpocząć konwersji", "Najpierw dodaj plik.");
             return;
         }
 

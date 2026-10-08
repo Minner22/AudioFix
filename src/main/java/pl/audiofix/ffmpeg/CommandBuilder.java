@@ -35,6 +35,10 @@ public class CommandBuilder {
         return args;
     }
 
+    /**
+     * The command used before AudioFix existed: ffmpeg picks one video, one audio (most channels)
+     * and one text subtitle stream itself; the audio is always converted to PCM 24-bit.
+     */
     public List<String> buildQuick(Path ffmpeg, Path input, Path output) {
 
         List<String> args = new ArrayList<>(inputArgs(ffmpeg, input));
