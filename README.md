@@ -71,7 +71,7 @@ a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/relea
 
 - ✅ **0.1.0, MVP:** wczytanie filmu, tabela ścieżek z wyróżnieniem DTS/TrueHD, wybór akcji i ścieżek
   domyślnych, plik wyjściowy, konwersja z postępem, logiem i anulowaniem.
-- **0.2.0, szybka konwersja:** konwersja jednym kliknięciem (jak dawna ręczna komenda ffmpeg),
+- ✅ **0.2.0, szybka konwersja:** konwersja jednym kliknięciem (jak dawna ręczna komenda ffmpeg),
   tytuły przekonwertowanych ścieżek zgodne z nowym formatem, wersja aplikacji w tytule okna,
   okno „O programie” z wersjami i licencjami, automatyczne testy (CI) przy każdej zmianie.
 - **0.3.0, kolejka:** wiele plików przetwarzanych po kolei, postęp każdego pliku, przeciąganie plików na okno.
