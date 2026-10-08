@@ -50,6 +50,11 @@
             <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
             <HBox spacing="8" alignment="CENTER_LEFT">
                 <Button fx:id="startButton" text="Start" onAction="#onStart"/>
+                <Button fx:id="quickConvertButton" text="Szybka konwersja" onAction="#onQuickConvert">
+                    <tooltip>
+                        <Tooltip text="Wideo + jedna ścieżka audio (najwięcej kanałów) jako PCM 24-bit, bez edycji ścieżek. Pozostałe ścieżki audio i napisy obrazkowe zostaną pominięte."/>
+                    </tooltip>
+                </Button>
                 <Button fx:id="cancelButton" text="Anuluj" onAction="#onCancel"/>
                 <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
             </HBox>

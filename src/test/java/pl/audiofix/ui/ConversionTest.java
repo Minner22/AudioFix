@@ -57,6 +57,7 @@ class ConversionTest {
     private MainController controller;
     private TableView<TrackPlan> table;
     private Button startButton;
+    private Button quickConvertButton;
     private Button cancelButton;
     private Button addFilesButton;
     private ProgressBar progressBar;
@@ -83,6 +84,7 @@ class ConversionTest {
             controller.setFfmpegPaths(paths);
             table = (TableView<TrackPlan>) root.lookup("#trackTable");
             startButton = (Button) root.lookup("#startButton");
+            quickConvertButton = (Button) root.lookup("#quickConvertButton");
             cancelButton = (Button) root.lookup("#cancelButton");
             addFilesButton = (Button) root.lookup("#addFilesButton");
             progressBar = (ProgressBar) root.lookup("#progressBar");
@@ -180,6 +182,48 @@ class ConversionTest {
         waitUntilFinished();
 
         assertTrue(Files.isRegularFile(outputPath()));
+    }
+
+    // ---------------------------------------------------------------- quick conversion (#21)
+
+    @Test
+    void quickConversionIgnoresTableAndKeepsOneAudioTrack() throws Exception {
+        Path output = outputPath();
+        onFxThread(() -> plan(1).setKeep(false));   // table changes do not matter for quick conversion
+
+        onFxThread(quickConvertButton::fire);
+        waitUntilFinished();
+
+        MediaInfo result = new FfprobeService(paths).probe(output);
+        assertEquals(List.of("mpeg4", "pcm_s24le", "ass"),
+                result.streams().stream().map(StreamInfo::codec).toList());
+        assertEquals(1.0, progressBar.getProgress());
+    }
+
+    @Test
+    void quickConversionLocksControlsLikeStart() throws Exception {
+        AtomicBoolean locked = new AtomicBoolean();
+        onFxThread(() -> {
+            quickConvertButton.fire();
+            locked.set(quickConvertButton.isDisable() && startButton.isDisable()
+                    && !cancelButton.isDisable() && table.isDisable());
+        });
+        assertTrue(locked.get(), "controls should be locked during quick conversion");
+
+        waitUntilFinished();
+
+        assertFalse(quickConvertButton.isDisable());
+        assertFalse(startButton.isDisable());
+    }
+
+    @Test
+    void quickConversionLogsItsCommand() throws Exception {
+        onFxThread(quickConvertButton::fire);
+        waitUntilFinished();
+
+        String log = logArea.getText();
+        assertTrue(log.contains("-c:a pcm_s24le"), "quick command not in log:" + System.lineSeparator() + log);
+        assertFalse(log.contains("-map "), "quick command must not map streams:" + System.lineSeparator() + log);
     }
 
     // ---------------------------------------------------------------- errors

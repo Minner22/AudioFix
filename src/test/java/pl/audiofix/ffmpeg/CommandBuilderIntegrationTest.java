@@ -80,6 +80,21 @@ class CommandBuilderIntegrationTest {
         assertEquals("eac3", result.streams().get(1).codec());
     }
 
+    @Test
+    void quickCommandKeepsOneConvertedAudioTrack() throws Exception {
+        // the sample has DTS (2 ch, default) and AC3 (1 ch) - ffmpeg picks the one with more channels
+        Path output = dir.resolve("quick.mkv");
+        List<String> args = builder.buildQuick(paths.ffmpeg(), sample.path(), output);
+
+        MediaInfo result = runCommand(args, output);
+
+        assertEquals(List.of(StreamType.VIDEO, StreamType.AUDIO, StreamType.SUBTITLE),
+                result.streams().stream().map(StreamInfo::type).toList());
+        assertEquals("pcm_s24le", result.streams().get(1).codec());
+        assertEquals(2, result.streams().get(1).channels());
+        assertEquals("ass", result.streams().get(2).codec(), "text subtitles are converted to ASS by default");
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static List<TrackPlan> plansFor(MediaInfo info) {
@@ -88,8 +103,10 @@ class CommandBuilderIntegrationTest {
 
     private MediaInfo run(List<TrackPlan> plans, String outputName) throws Exception {
         Path output = dir.resolve(outputName);
-        List<String> args = builder.build(paths.ffmpeg(), sample.path(), output, plans);
+        return runCommand(builder.build(paths.ffmpeg(), sample.path(), output, plans), output);
+    }
 
+    private static MediaInfo runCommand(List<String> args, Path output) throws Exception {
         Process p = new ProcessBuilder(args)
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)   // -progress pipe:1 writes to stdout
                 .redirectError(ProcessBuilder.Redirect.INHERIT)

@@ -50,6 +50,7 @@ public class MainController {
     @FXML private ProgressBar progressBar;
     @FXML private TextArea logArea;
     @FXML private Button aboutButton;
+    @FXML private Button quickConvertButton;
 
     private FfmpegPaths ffmpegPaths;
     private MediaInfo mediaInfo;
@@ -218,7 +219,7 @@ public class MainController {
             return;
         }
 
-        startConversion();
+        startConversion(new CommandBuilder().build(ffmpegPaths.ffmpeg(), mediaInfo.path(), output, plans));
     }
 
     @FXML
@@ -239,9 +240,19 @@ public class MainController {
         }
     }
 
-    private void startConversion() {
+    @FXML
+    private void onQuickConvert() {
 
-        List<String> command = new CommandBuilder().build(ffmpegPaths.ffmpeg(), mediaInfo.path(), output, plans);
+        if (mediaInfo == null) {
+            showWarning("Nie można rozpocząć konwersji", "Najpierw dodaj plik.");
+            return;
+        }
+
+        startConversion(new CommandBuilder().buildQuick(ffmpegPaths.ffmpeg(), mediaInfo.path(), output));
+    }
+
+    private void startConversion(List<String> command) {
+
         appendLog(CommandBuilder.toCommandLine(command));
 
         ConversionTask task = new ConversionTask(command, output, mediaInfo.durationSec(), this::appendLog);
@@ -281,6 +292,7 @@ public class MainController {
         ffmpegSettingsButton.setDisable(running);
         changeOutputButton.setDisable(running);
         trackTable.setDisable(running);
+        quickConvertButton.setDisable(running);
     }
 
     private void appendLog(String line) {
