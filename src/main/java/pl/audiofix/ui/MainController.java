@@ -1,5 +1,6 @@
 package pl.audiofix.ui;
 
+import javafx.application.HostServices;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -48,6 +49,7 @@ public class MainController {
     @FXML private Button cancelButton;
     @FXML private ProgressBar progressBar;
     @FXML private TextArea logArea;
+    @FXML private Button aboutButton;
 
     private FfmpegPaths ffmpegPaths;
     private MediaInfo mediaInfo;
@@ -55,10 +57,16 @@ public class MainController {
     private File lastDirectory;
     private Path output;
     private ConversionTask conversion;
+    private HostServices hostServices;
 
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
         this.ffmpegPaths = ffmpegPaths;
+    }
+
+    public void setHostServices(HostServices hostServices) {
+
+        this.hostServices = hostServices;
     }
 
     public void shutdown() {
@@ -218,6 +226,16 @@ public class MainController {
 
         if (conversion != null) {
             conversion.cancel();
+        }
+    }
+
+    @FXML
+    private void onAbout() {
+
+        try {
+            AboutDialog.show(window(), ffmpegPaths, hostServices);
+        } catch (RuntimeException e) {
+            showError("Nie można otworzyć okna „O programie”", e);
         }
     }
 

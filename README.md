@@ -81,3 +81,7 @@ a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/relea
 - **1.1.0, wielojęzyczność:** interfejs po polsku i angielsku z wyborem języka.
 
 Proces wydawania nowych wersji: [RELEASING.md](RELEASING.md).
+
+## Licencja
+
+[MIT](LICENSE). AudioFix uruchamia [FFmpeg](https://ffmpeg.org) jako osobny program, a FFmpeg ma własną licencję (LGPL/GPL).

@@ -6,3 +6,8 @@
 .table-row-cell:removed > .table-cell {
     -fx-opacity: 0.45;
 }
+
+.about-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}

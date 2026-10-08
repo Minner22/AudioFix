@@ -50,7 +50,7 @@ class MainViewTest {
 
     @Test
     void buttonsExist() {
-        for (String id : List.of("addFilesButton", "ffmpegSettingsButton", "removeFromQueueButton",
+        for (String id : List.of("addFilesButton", "ffmpegSettingsButton", "aboutButton", "removeFromQueueButton",
                 "changeOutputButton", "startButton", "cancelButton")) {
             Button button = lookup(id, Button.class);
             assertNotNull(button.getOnAction(), "no onAction handler for " + id);

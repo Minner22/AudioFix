@@ -1,0 +1,24 @@
+AudioFix
+  Licencja MIT. Pełny tekst: plik LICENSE w repozytorium.
+
+Komponenty zewnętrzne:
+
+OpenJFX (JavaFX)
+  GNU GPL v2 z Classpath Exception
+  https://openjfx.io
+
+Jackson
+  Apache License 2.0
+  https://github.com/FasterXML/jackson
+
+SLF4J
+  Licencja MIT
+  https://www.slf4j.org
+
+Logback
+  Eclipse Public License 1.0 / GNU LGPL 2.1
+  https://logback.qos.ch
+
+FFmpeg
+  Uruchamiany jako osobny program. GNU LGPL 2.1+ albo GNU GPL, zależnie od builda.
+  https://ffmpeg.org
