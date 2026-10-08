@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-public class TrackTitles {
+public final class TrackTitles {
 
     private TrackTitles() {}
 

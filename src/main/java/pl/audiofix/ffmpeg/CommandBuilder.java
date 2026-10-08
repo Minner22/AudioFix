@@ -1,6 +1,10 @@
 package pl.audiofix.ffmpeg;
 
-import pl.audiofix.model.*;
+import pl.audiofix.model.AudioCodec;
+import pl.audiofix.model.StreamInfo;
+import pl.audiofix.model.StreamType;
+import pl.audiofix.model.TrackPlan;
+import pl.audiofix.model.TrackTitles;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

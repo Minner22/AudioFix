@@ -9,8 +9,7 @@ public enum AudioCodec {
     PCM_S16LE("PCM 16-bit", "pcm_s16le", null, "PCM", 0),
     EAC3("E-AC3 (Dolby Digital+)", "eac3", "640k", "E-AC3", 6),
     AC3("AC3 (Dolby Digital)", "ac3", "640k", "AC3", 6),
-    AAC("AAC (Advanced Audio Coding)", "aac", "320k", "AAC", 0),
-    ;
+    AAC("AAC (Advanced Audio Coding)", "aac", "320k", "AAC", 0);
 
     private final String label;
     private final String ffmpegName;
@@ -42,11 +41,13 @@ public enum AudioCodec {
         return Optional.ofNullable(bitrate);
     }
 
+    /** Short format name used in the track title, e.g. "PCM"; empty for COPY. */
     public Optional<String> getTitleName() {
 
         return Optional.ofNullable(titleName);
     }
 
+    /** Channels in the converted track: the source count, limited by what the encoder supports. */
     public int outputChannels(int sourceChannels) {
 
         return maxChannels > 0
@@ -56,7 +57,6 @@ public enum AudioCodec {
 
 
     @Override
-
     public String toString() {
 
         return label;
