@@ -1,8 +1,6 @@
 package pl.audiofix.ffmpeg;
 
-import pl.audiofix.model.AudioCodec;
-import pl.audiofix.model.StreamType;
-import pl.audiofix.model.TrackPlan;
+import pl.audiofix.model.*;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -77,21 +75,31 @@ public class CommandBuilder {
         List<String> args = new ArrayList<>();
         for (int k = 0; k < audio.size(); k++) {
             TrackPlan plan = audio.get(k);
-            args.addAll(codecArgs(k, plan.getTargetCodec()));
+            args.addAll(codecArgs(k, plan));
             args.addAll(dispositionArgs("a", k, plan));
         }
 
         return args;
     }
 
-    private static List<String> codecArgs(int k, AudioCodec codec) {
+    private static List<String> codecArgs(int k, TrackPlan plan) {
 
+        AudioCodec codec = plan.getTargetCodec();
         if (codec == null || codec == AudioCodec.COPY) {
             return List.of();
         }
 
+        StreamInfo stream = plan.getStream();
         List<String> args = new ArrayList<>(List.of("-c:a:" + k, codec.getFfmpegName()));
         codec.getBitrate().ifPresent(bitrate -> args.addAll(List.of("-b:a:" + k, bitrate)));
+
+        int channels = codec.outputChannels(stream.channels());
+        if (channels < stream.channels()) {
+            args.addAll(List.of("-ac:a:" + k, String.valueOf(channels)));
+        }
+
+        TrackTitles.forConversion(stream, codec)
+                .ifPresent(title -> args.addAll(List.of("-metadata:s:a:" + k, "title=" + title)));
 
         return args;
     }

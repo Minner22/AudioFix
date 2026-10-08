@@ -39,6 +39,7 @@ class CommandBuilderTest {
                 "-map_chapters", "0",
                 "-c", "copy",
                 "-c:a:0", "pcm_s24le",
+                "-metadata:s:a:0", "title=PCM 5.1",
                 "-disposition:a:0", "+default",
                 "-disposition:a:1", "-default",
                 "-disposition:s:0", "-default",
@@ -253,6 +254,102 @@ class CommandBuilderTest {
         assertTrue(args.stream().noneMatch(a -> a.startsWith("-disposition:v")));
     }
 
+    // ---------------------------------------------------------------- downmix and titles (#48)
+
+    @Test
+    void sevenOneToAc3IsDownmixedToFiveOne() {
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.AC3));
+
+        assertTrue(containsSequence(args, "-c:a:0", "ac3", "-b:a:0", "640k", "-ac:a:0", "6"), args.toString());
+    }
+
+    @Test
+    void sevenOneToEac3IsDownmixedToFiveOne() {
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.EAC3));
+
+        assertTrue(containsSequence(args, "-ac:a:0", "6"), args.toString());
+    }
+
+    @Test
+    void pcmAndAacKeepAllChannels() {
+        assertTrue(builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.PCM_S24LE)).stream().noneMatch(a -> a.startsWith("-ac")));
+        assertTrue(builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.AAC)).stream().noneMatch(a -> a.startsWith("-ac")));
+    }
+
+    @Test
+    void fiveOneToAc3IsNotDownmixed() {
+        List<TrackPlan> plans = typicalPlans();
+        plans.get(1).setTargetCodec(AudioCodec.AC3);   // DTS 5.1
+
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, plans);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-ac")), args.toString());
+    }
+
+    @Test
+    void convertedTrackGetsTitleOfNewFormat() {
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.PCM_S24LE));
+
+        assertTrue(containsSequence(args, "-metadata:s:a:0", "title=PCM 7.1"), args.toString());
+    }
+
+    @Test
+    void downmixedTrackTitleShowsOutputLayout() {
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.AC3));
+
+        assertTrue(containsSequence(args, "-metadata:s:a:0", "title=AC3 5.1"), args.toString());
+    }
+
+    @Test
+    void titleIndexCountsOnlyKeptAudioTracks() {
+        // 0 video, 1 AC3 (removed), 2 TrueHD -> TrueHD becomes output audio #0
+        List<TrackPlan> plans = List.of(
+                TrackPlan.defaultsFor(stream(0, StreamType.VIDEO, "hevc", true)),
+                TrackPlan.defaultsFor(stream(1, StreamType.AUDIO, "ac3", true)),
+                TrackPlan.defaultsFor(audio(2, "truehd", 8, "7.1", "TrueHD Atmos 7.1")));
+        plans.get(1).setKeep(false);
+
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, plans);
+
+        assertTrue(containsSequence(args, "-metadata:s:a:0", "title=PCM 7.1"), args.toString());
+        assertFalse(args.contains("-metadata:s:a:1"));
+    }
+
+    @Test
+    void copiedTrackKeepsItsTitle() {
+        List<TrackPlan> plans = convertedTrueHd(AudioCodec.COPY);
+
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, plans);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata")), args.toString());
+    }
+
+    @Test
+    void titleWithoutFormatNameIsNotChanged() {
+        List<TrackPlan> plans = List.of(
+                TrackPlan.defaultsFor(stream(0, StreamType.VIDEO, "hevc", true)),
+                TrackPlan.defaultsFor(audio(1, "dts", 6, "5.1(side)", "Komentarz reżysera")));
+
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, plans);
+
+        assertTrue(args.contains("-c:a:0"), "track is still converted");
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata")), args.toString());
+    }
+
+    @Test
+    void titleWithSpacesIsOneArgument() {
+        List<String> args = builder.build(FFMPEG, INPUT, OUTPUT, convertedTrueHd(AudioCodec.PCM_S24LE));
+
+        assertEquals("title=PCM 7.1", args.get(args.indexOf("-metadata:s:a:0") + 1));
+    }
+
+    @Test
+    void quickCommandDoesNotChangeTitles() {
+        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata") || a.startsWith("-ac")));
+    }
+
     // ---------------------------------------------------------------- buildQuick (#21)
 
     @Test
@@ -317,6 +414,19 @@ class CommandBuilderTest {
                 TrackPlan.defaultsFor(stream(1, StreamType.AUDIO, "dts", true)),
                 TrackPlan.defaultsFor(stream(2, StreamType.AUDIO, "ac3", false)),
                 TrackPlan.defaultsFor(stream(3, StreamType.SUBTITLE, "subrip", false))));
+    }
+
+    /** 0 video, 1 TrueHD 7.1 "TrueHD Atmos 7.1" converted to the given codec. */
+    private static List<TrackPlan> convertedTrueHd(AudioCodec codec) {
+        List<TrackPlan> plans = List.of(
+                TrackPlan.defaultsFor(stream(0, StreamType.VIDEO, "hevc", true)),
+                TrackPlan.defaultsFor(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")));
+        plans.get(1).setTargetCodec(codec);
+        return plans;
+    }
+
+    private static StreamInfo audio(int index, String codec, int channels, String layout, String title) {
+        return new StreamInfo(index, StreamType.AUDIO, codec, null, channels, layout, "eng", title, true);
     }
 
     private static StreamInfo stream(int index, StreamType type, String codec, boolean isDefault) {
