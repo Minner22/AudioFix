@@ -49,7 +49,7 @@ class CommandBuilderIntegrationTest {
         assertEquals(List.of("mpeg4", "pcm_s24le", "ac3", "subrip"), codecs(result));
         StreamInfo pcm = result.streams().get(1);
         assertEquals("eng", pcm.language());
-        assertEquals("DTS ąę", pcm.title());
+        assertEquals("PCM ąę", pcm.title(), "format name in the title follows the new codec");
         assertTrue(pcm.isDefault());
         assertFalse(result.streams().get(2).isDefault());
     }
@@ -95,7 +95,43 @@ class CommandBuilderIntegrationTest {
         assertEquals("ass", result.streams().get(2).codec(), "text subtitles are converted to ASS by default");
     }
 
+    @Test
+    void sevenOneToAc3BecomesFiveOneWithLfe() throws Exception {
+        // AC3 has at most 6 channels; without -ac ffmpeg would pick 5.0(side) and drop the LFE
+        MediaInfo surround = probe.probe(generateSevenOne(dir.resolve("surround.mkv")));
+        List<TrackPlan> plans = plansFor(surround);
+        plans.get(1).setTargetCodec(AudioCodec.AC3);
+        Path output = dir.resolve("surround_ac3.mkv");
+
+        MediaInfo result = runCommand(builder.build(paths.ffmpeg(), surround.path(), output, plans), output);
+
+        StreamInfo ac3 = result.streams().get(1);
+        assertEquals("ac3", ac3.codec());
+        assertEquals(6, ac3.channels());
+        assertEquals("5.1(side)", ac3.channelLayout());
+        assertEquals("AC3 5.1", ac3.title());
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    /** 1 s of video and a 7.1 FLAC track titled "TrueHD Atmos 7.1". */
+    private static Path generateSevenOne(Path output) throws Exception {
+        List<String> args = List.of(paths.ffmpeg().toString(), "-hide_banner", "-y",
+                "-f", "lavfi", "-i", "testsrc=duration=1:size=320x240:rate=25",
+                "-f", "lavfi", "-i", "sine=frequency=440:duration=1:sample_rate=48000",
+                "-map", "0", "-map", "1",
+                "-af", "aformat=channel_layouts=7.1",
+                "-c:v", "mpeg4", "-c:a", "flac",
+                "-metadata:s:a:0", "title=TrueHD Atmos 7.1",
+                output.toString());
+        Process p = new ProcessBuilder(args)
+                .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .start();
+        assertTrue(p.waitFor(60, TimeUnit.SECONDS), "ffmpeg timed out");
+        assertEquals(0, p.exitValue(), "could not generate 7.1 sample");
+        return output;
+    }
 
     private static List<TrackPlan> plansFor(MediaInfo info) {
         return info.streams().stream().map(TrackPlan::defaultsFor).toList();
