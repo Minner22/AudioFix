@@ -253,6 +253,39 @@ class CommandBuilderTest {
         assertTrue(args.stream().noneMatch(a -> a.startsWith("-disposition:v")));
     }
 
+    // ---------------------------------------------------------------- buildQuick (#21)
+
+    @Test
+    void quickCommandIsTheOldManualCommand() {
+        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+
+        assertEquals(List.of(
+                FFMPEG.toString(), "-hide_banner", "-y",
+                "-i", INPUT.toString(),
+                "-c:v", "copy",
+                "-c:a", "pcm_s24le",
+                "-progress", "pipe:1", "-nostats",
+                OUTPUT.toString()), args);
+    }
+
+    @Test
+    void quickCommandLetsFfmpegChooseStreams() {
+        // no -map: ffmpeg's own stream selection, exactly like the command used before AudioFix
+        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+
+        assertFalse(args.contains("-map"));
+        assertFalse(args.contains("-map_chapters"));
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-disposition")));
+    }
+
+    @Test
+    void quickCommandKeepsPathsWithSpacesAsSingleArguments() {
+        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+
+        assertTrue(args.contains(INPUT.toString()));
+        assertEquals(OUTPUT.toString(), args.getLast());
+    }
+
     // ---------------------------------------------------------------- toCommandLine (#11)
 
     @Test

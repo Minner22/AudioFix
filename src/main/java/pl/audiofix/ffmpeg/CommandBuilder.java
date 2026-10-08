@@ -35,6 +35,16 @@ public class CommandBuilder {
         return args;
     }
 
+    public List<String> buildQuick(Path ffmpeg, Path input, Path output) {
+
+        List<String> args = new ArrayList<>(inputArgs(ffmpeg, input));
+        args.addAll(List.of("-c:v", "copy", "-c:a", AudioCodec.PCM_S24LE.getFfmpegName()));
+        args.addAll(PROGRESS_TO_STDOUT);
+        args.add(output.toString());
+
+        return args;
+    }
+
     public static String toCommandLine(List<String> args) {
 
         return args.stream()

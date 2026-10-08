@@ -51,7 +51,7 @@ class MainViewTest {
     @Test
     void buttonsExist() {
         for (String id : List.of("addFilesButton", "ffmpegSettingsButton", "aboutButton", "removeFromQueueButton",
-                "changeOutputButton", "startButton", "cancelButton")) {
+                "changeOutputButton", "startButton", "quickConvertButton", "cancelButton")) {
             Button button = lookup(id, Button.class);
             assertNotNull(button.getOnAction(), "no onAction handler for " + id);
             assertFalse(button.getText().isBlank(), "no text on " + id);
@@ -75,6 +75,14 @@ class MainViewTest {
 
         assertEquals(List.of("keepColumn", "indexColumn", "typeColumn", "codecColumn", "channelsColumn",
                 "languageColumn", "titleColumn", "actionColumn", "defaultColumn"), ids);
+    }
+
+    @Test
+    void quickConvertButtonExplainsWhatItDoes() {
+        Button quick = lookup("quickConvertButton", Button.class);
+
+        assertNotNull(quick.getTooltip(), "quick conversion should have a tooltip");
+        assertTrue(quick.getTooltip().getText().contains("PCM"), quick.getTooltip().getText());
     }
 
     @Test
