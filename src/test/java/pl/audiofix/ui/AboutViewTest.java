@@ -10,6 +10,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.layout.Region;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,10 +117,17 @@ class AboutViewTest {
     void licensesListAllComponents() {
         String licenses = lookup("licensesArea", TextArea.class).getText();
 
-        for (String name : List.of("AudioFix", "MIT", "OpenJFX", "Jackson", "SLF4J", "Logback", "FFmpeg")) {
+        for (String name : List.of("AudioFix", "MIT", "OpenJFX", "Jackson", "SLF4J", "Logback", "FFmpeg",
+                "Geist", "JetBrains Mono", "SIL Open Font License")) {
             assertTrue(licenses.contains(name), "licenses do not mention " + name);
         }
         assertFalse(lookup("licensesArea", TextArea.class).isEditable());
+    }
+
+    @Test
+    void buttonsAreNeverNarrowerThanTheirText() {
+        assertEquals(Region.USE_PREF_SIZE, lookup("copyButton", Button.class).getMinWidth());
+        assertEquals(Region.USE_PREF_SIZE, lookup("closeButton", Button.class).getMinWidth());
     }
 
     @Test

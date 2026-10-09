@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import pl.audiofix.AppVersion;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ffmpeg.FfmpegVersion;
+import pl.audiofix.ui.theme.Theme;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -52,7 +53,10 @@ final class AboutDialog {
         stage.initOwner(owner);
         stage.initModality(Modality.WINDOW_MODAL);
         stage.setTitle("O programie - " + WINDOW_TITLE);
-        stage.setScene(new Scene(root));
+
+        Scene scene = new Scene(root);
+        Theme.apply(scene);
+        stage.setScene(scene);
         stage.setResizable(false);
         stage.show();
 

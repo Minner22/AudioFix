@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+
+<html lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AudioFix v1.0 - Desktop GUI</title>
+<!-- Load Tailwind CSS v3 with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- BEGIN: JavaFX Theming Stylesheet -->
+<style data-purpose="javafx-modena-flat-theme">
+    /* JavaFX Flat Modena / Windows Desktop Base Typography & Defaults */
+    :root {
+      --fx-base: #f4f4f4;
+      --fx-background: #ececec;
+      --fx-control-inner-background: #ffffff;
+      --fx-accent: #0078d7;
+      --fx-accent-hover: #1e88e5;
+      --fx-border-color: #c0c0c0;
+      --fx-header-background: #f0f0f0;
+      --fx-selection-bar: #cde8ff;
+      --fx-selection-border: #99d1ff;
+      --fx-text-base-color: #222222;
+      --fx-muted-color: #666666;
+      --fx-font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--fx-font-family);
+      background-color: #333333;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Native-like Flat JavaFX Button */
+    .fx-button {
+      background-color: #fcfcfc;
+      border: 1px solid #bfbfbf;
+      border-radius: 2px;
+      font-size: 11.5px;
+      line-height: 1.1;
+      padding: 4px 10px;
+      color: #222222;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+      transition: background-color 0.1s, border-color 0.1s;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .fx-button:hover:not(:disabled) {
+      background-color: #e5f1fb;
+      border-color: #70a0e0;
+    }
+    .fx-button:active:not(:disabled) {
+      background-color: #cce4f7;
+      border-color: #0078d7;
+    }
+    .fx-button:disabled {
+      background-color: #f4f4f4;
+      border-color: #d8d8d8;
+      color: #a0a0a0;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* Primary Accent Button */
+    .fx-button-primary {
+      background-color: #0078d7;
+      border-color: #0063b1;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .fx-button-primary:hover:not(:disabled) {
+      background-color: #1084df;
+      border-color: #005a9e;
+      color: #ffffff;
+    }
+    .fx-button-primary:active:not(:disabled) {
+      background-color: #005a9e;
+      border-color: #004578;
+    }
+
+    /* Flat Table Styling matching JavaFX TableView */
+    .fx-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      font-size: 11.5px;
+    }
+    .fx-table th {
+      background: #efefef;
+      border-bottom: 1px solid #d0d0d0;
+      border-right: 1px solid #dcdcdc;
+      color: #333333;
+      font-weight: 600;
+      padding: 4px 6px;
+      text-align: left;
+      font-size: 11px;
+    }
+    .fx-table th:last-child {
+      border-right: none;
+    }
+    .fx-table td {
+      border-bottom: 1px solid #e9e9e9;
+      border-right: 1px solid #f0f0f0;
+      padding: 3.5px 6px;
+      color: #222222;
+      vertical-align: middle;
+    }
+    .fx-table td:last-child {
+      border-right: none;
+    }
+    .fx-table tbody tr:hover td {
+      background-color: #f5f9fe;
+    }
+
+    /* Highlighted Rows (Action Needed: PCM 24-bit conversion) */
+    .fx-table tr.fx-row-convert td {
+      background-color: #fff7ed;
+      border-bottom-color: #fed7aa;
+      border-top-color: #fed7aa;
+    }
+    .fx-table tr.fx-row-convert td:first-child {
+      border-left: 2px solid #f97316;
+    }
+    .fx-table tr.fx-row-convert:hover td {
+      background-color: #ffedd5;
+    }
+
+    /* Inactive / Excluded row */
+    .fx-table tr.fx-row-disabled td {
+      color: #999999;
+      background-color: #fafafa;
+    }
+
+    /* JavaFX ComboBox simulation */
+    .fx-combobox {
+      background-color: #ffffff;
+      border: 1px solid #bbbbbb;
+      border-radius: 2px;
+      font-size: 11px;
+      padding: 2px 18px 2px 6px;
+      color: #222222;
+      position: relative;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%228%22%20height%3D%225%22%3E%3Cpath%20fill%3D%22%23444444%22%20d%3D%22M0%200l4%204%204-4z%22%2F%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      background-size: 7px 4px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .fx-combobox.highlighted {
+      border-color: #f97316;
+      background-color: #fffdfa;
+      font-weight: 600;
+      color: #c2410c;
+    }
+
+    /* JavaFX Checkbox & Radio adjustments */
+    .fx-checkbox {
+      width: 13px;
+      height: 13px;
+      border-radius: 2px;
+      border-color: #999999;
+      accent-color: #0078d7;
+      margin: 0;
+      cursor: pointer;
+    }
+    .fx-radio {
+      width: 13px;
+      height: 13px;
+      border-color: #999999;
+      accent-color: #0078d7;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    /* Custom thin scrollbar */
+    ::-webkit-scrollbar {
+      width: 9px;
+      height: 9px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-left: 1px solid #e0e0e0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c5c5c5;
+      border: 1px solid #b8b8b8;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9d9d9d;
+    }
+  </style>
+<!-- END: JavaFX Theming Stylesheet -->
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+<!-- BEGIN: Desktop Window Outer Frame (1100x700 Native Window Simulation) -->
+<div class="w-[1100px] h-[700px] bg-[#f0f0f0] rounded-[6px] shadow-2xl border border-[#7f7f7f] flex flex-col overflow-hidden text-[#1e1e1e]" data-purpose="desktop-app-window">
+<!-- BEGIN: Native Windows Titlebar -->
+<header class="h-[30px] bg-[#ffffff] border-b border-[#dadada] flex items-center justify-between px-2.5 select-none shrink-0" data-purpose="window-titlebar">
+<!-- Title & Icon -->
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 text-[#0078d7]" fill="currentColor" viewbox="0 0 24 24">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"></path>
+</svg>
+<span class="text-xs font-semibold text-[#333333] tracking-wide">AudioFix v1.0</span>
+</div>
+<!-- Native Windows Caption Controls -->
+<div class="flex items-center -mr-2.5 h-full">
+<button aria-label="Minimalizuj" class="h-full px-3.5 hover:bg-[#e5e5e5] active:bg-[#cccccc] flex items-center justify-center transition-colors" type="button">
+<svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 10 1"><path d="M0 0h10v1H0z"></path></svg>
+</button>
+<button aria-label="Maksymalizuj" class="h-full px-3.5 hover:bg-[#e5e5e5] active:bg-[#cccccc] flex items-center justify-center transition-colors" type="button">
+<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" stroke-width="1" viewbox="0 0 10 10"><path d="M0.5 0.5h9v9h-9z"></path></svg>
+</button>
+<button aria-label="Zamknij" class="h-full px-3.5 hover:bg-[#e81123] hover:text-white active:bg-[#bf0f1d] flex items-center justify-center transition-colors" type="button">
+<svg class="w-2.5 h-2.5" fill="currentColor" viewbox="0 0 10 10"><path d="M9 1L5 5 1 1 0 2l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4z"></path></svg>
+</button>
+</div>
+</header>
+<!-- END: Native Windows Titlebar -->
+<!-- BEGIN: JavaFX Top ToolBar -->
+<nav class="bg-[#f7f7f7] border-b border-[#d8d8d8] px-2.5 py-1.5 flex items-center justify-between shrink-0" data-purpose="top-toolbar">
+<!-- Action Buttons Left -->
+<div class="flex items-center gap-1.5 flex-wrap">
+<button class="fx-button font-medium" type="button">
+<svg class="w-3.5 h-3.5 text-[#0078d7]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Dodaj pliki…</span>
+</button>
+<button class="fx-button" type="button">
+<svg class="w-3.5 h-3.5 text-[#555555]" fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+<span>Ustawienia ffmpeg</span>
+</button>
+<button class="fx-button border-[#f97316]/50 bg-[#fffbf7] hover:bg-[#fff2e5] text-[#c2410c] font-medium" type="button">
+<svg class="w-3.5 h-3.5 text-[#f97316]" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" fill-rule="evenodd"></path>
+</svg>
+<span>Szybka konwersja</span>
+</button>
+</div>
+<!-- Action Buttons Right (Language + About) -->
+<div class="flex items-center gap-2">
+<!-- Language Switcher Toggle -->
+<div class="flex border border-[#bebebe] rounded-[2px] overflow-hidden text-[11px] bg-[#ffffff] h-[22px]" data-purpose="language-selector">
+<button class="px-2 py-0.5 bg-[#0078d7] text-white font-semibold flex items-center leading-none" type="button">PL</button>
+<div class="w-[1px] bg-[#bebebe]"></div>
+<button class="px-2 py-0.5 hover:bg-[#ececec] text-[#444444] font-medium flex items-center leading-none" type="button">EN</button>
+</div>
+<button class="fx-button" title="Informacje o programie &amp; licencja LGPL ffmpeg" type="button">
+<svg class="w-3.5 h-3.5 text-[#666666]" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+</svg>
+<span>O programie</span>
+</button>
+</div>
+</nav>
+<!-- END: JavaFX Top ToolBar -->
+<!-- BEGIN: SplitPane Body Layout -->
+<div class="flex flex-1 overflow-hidden min-h-0 bg-[#e8e8e8] p-1 gap-1" data-purpose="javafx-split-pane">
+<!-- BEGIN: Left Panel (Queue / Kolejka) -->
+<section class="w-[285px] bg-[#f8f8f8] border border-[#c4c4c4] rounded-[2px] flex flex-col shrink-0 overflow-hidden" data-purpose="queue-panel">
+<!-- Queue Header -->
+<div class="bg-[#f0f0f0] border-b border-[#d4d4d4] px-2.5 py-1.5 flex items-center justify-between">
+<span class="text-xs font-semibold text-[#333333]">Kolejka plików (3)</span>
+<span class="text-[10.5px] text-[#777777]">Pozostało: 2</span>
+</div>
+<!-- ListView Container -->
+<div class="flex-1 overflow-y-auto bg-white divide-y divide-[#ececec] select-none text-xs">
+<!-- Item 1: Active / Selected -->
+<div class="p-2 bg-[#ddecfa] border-l-[3px] border-[#0078d7] cursor-pointer">
+<div class="flex items-start justify-between gap-1 mb-1">
+<span class="font-medium text-[#111111] leading-tight truncate text-[11.5px]" title="Drive.2011.UHD.BluRay.2160p…REMUX.mkv">
+                Drive.2011.UHD.BluRay.2160p…REMUX.mkv
+              </span>
+</div>
+<div class="flex items-center justify-between text-[10.5px] mb-1">
+<span class="text-[#555555]">32.4 GB • MKV</span>
+<span class="px-1.5 py-0.2 bg-[#0078d7] text-white rounded-[2px] font-semibold text-[10px]">W trakcie 42%</span>
+</div>
+<!-- Mini Progress bar inside item -->
+<div class="w-full bg-[#c0d6ea] h-1 rounded-sm overflow-hidden">
+<div class="bg-[#0078d7] h-full w-[42%]"></div>
+</div>
+</div>
+<!-- Item 2: Queued -->
+<div class="p-2 hover:bg-[#f6f9fc] cursor-pointer transition-colors">
+<div class="flex items-start justify-between gap-1 mb-0.5">
+<span class="font-normal text-[#2b2b2b] leading-tight truncate text-[11.5px]" title="Flow.2024.UHD…REMUX.mkv">
+                Flow.2024.UHD…REMUX.mkv
+              </span>
+</div>
+<div class="flex items-center justify-between text-[10.5px]">
+<span class="text-[#777777]">18.1 GB • MKV</span>
+<span class="px-1.5 py-0.2 bg-[#e0e0e0] text-[#555555] rounded-[2px] font-medium text-[10px]">Oczekuje</span>
+</div>
+</div>
+<!-- Item 3: Completed -->
+<div class="p-2 hover:bg-[#f6f9fc] cursor-pointer transition-colors">
+<div class="flex items-start justify-between gap-1 mb-0.5">
+<span class="font-normal text-[#2b2b2b] leading-tight truncate text-[11.5px]" title="Married.With.Children.S02E01….mkv">
+                Married.With.Children.S02E01….mkv
+              </span>
+</div>
+<div class="flex items-center justify-between text-[10.5px]">
+<span class="text-[#777777]">1.4 GB • MKV</span>
+<span class="px-1.5 py-0.2 bg-[#e6f4ea] text-[#137333] border border-[#ceead6] rounded-[2px] font-medium text-[10px]">Gotowe</span>
+</div>
+</div>
+</div>
+<!-- Queue Bottom Actions -->
+<div class="bg-[#f0f0f0] border-t border-[#d4d4d4] p-1.5 flex items-center justify-between">
+<button class="fx-button text-[11px] py-0.5 px-2" type="button">
+<svg class="w-3 h-3 text-[#d93025]" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" fill-rule="evenodd"></path>
+</svg>
+<span>Usuń z kolejki</span>
+</button>
+<span class="text-[10px] text-[#777777]">3 elementy</span>
+</div>
+</section>
+<!-- END: Left Panel (Queue) -->
+<!-- BEGIN: Right Panel (Tracks & Configuration) -->
+<section class="flex-1 bg-[#ffffff] border border-[#c4c4c4] rounded-[2px] flex flex-col min-w-0 overflow-hidden" data-purpose="tracks-table-panel">
+<!-- Header Info Bar -->
+<div class="bg-[#f2f2f2] border-b border-[#d0d0d0] px-3 py-1.5 flex items-center justify-between">
+<div class="flex items-center gap-1.5 truncate">
+<span class="text-xs font-semibold text-[#222222]">Ścieżki:</span>
+<span class="text-xs text-[#0066cc] font-medium truncate" title="Drive.2011.UHD.BluRay.2160p…REMUX.mkv">Drive.2011.UHD.BluRay.2160p…REMUX.mkv</span>
+<span class="text-[11px] text-[#666666] shrink-0">(32.4 GB, Matroska)</span>
+</div>
+<div class="flex items-center gap-2 shrink-0 text-[10.5px] text-[#666666]">
+<span>9 ścieżek wykrytych</span>
+</div>
+</div>
+<!-- Native JavaFX TableView -->
+<div class="flex-1 overflow-auto bg-[#ffffff]">
+<table class="fx-table">
+<thead>
+<tr>
+<th class="w-12 text-center">Zostaw</th>
+<th class="w-8 text-center">#</th>
+<th class="w-16">Typ</th>
+<th class="w-44">Kodek</th>
+<th class="w-16">Kanały</th>
+<th class="w-14">Język</th>
+<th>Tytuł</th>
+<th class="w-36">Akcja</th>
+<th class="w-16 text-center">Domyślna</th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 0: Video Track (Locked copy) -->
+<tr>
+<td class="text-center">
+<input checked="" class="fx-checkbox cursor-not-allowed opacity-75" disabled="" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] text-[#666]">0</td>
+<td><span class="font-semibold text-[#2563eb]">Wideo</span></td>
+<td class="font-mono text-[11px]">hevc (Main 10)</td>
+<td class="text-center text-[#777]">-</td>
+<td><span class="px-1 py-0.5 bg-[#f0f0f0] rounded text-[10px] font-mono">und</span></td>
+<td class="text-[#777] italic text-[11px]">-</td>
+<td>
+<select class="fx-combobox w-full cursor-not-allowed bg-[#f3f3f3] text-[#777]" disabled="">
+<option selected="">Kopiuj (passthrough)</option>
+</select>
+</td>
+<td class="text-center">
+<input checked="" class="fx-radio cursor-not-allowed" disabled="" name="default_video" type="radio"/>
+</td>
+</tr>
+<!-- Row 1: Audio TrueHD (Target conversion: PCM 24-bit) -->
+<tr class="fx-row-convert">
+<td class="text-center">
+<input checked="" class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] font-medium">1</td>
+<td><span class="font-semibold text-[#0d9488]">Audio</span></td>
+<td>
+<div class="font-medium text-[#c2410c]">truehd</div>
+<div class="text-[10px] text-[#666666]">Dolby TrueHD + Atmos</div>
+</td>
+<td class="font-semibold">8 ch</td>
+<td><span class="px-1 py-0.5 bg-[#e0f2fe] text-[#0369a1] rounded text-[10px] font-bold">eng</span></td>
+<td class="font-medium text-[#111827]">TrueHD Atmos 7.1</td>
+<td>
+<select class="fx-combobox highlighted w-full font-medium">
+<option>Kopiuj</option>
+<option selected="">PCM 24-bit</option>
+<option>PCM 16-bit</option>
+<option>AC-3 (640 kbps)</option>
+<option>FLAC 24-bit</option>
+</select>
+</td>
+<td class="text-center">
+<input checked="" class="fx-radio" name="default_audio" title="Ustaw jako domyślną ścieżkę dźwiękową" type="radio"/>
+</td>
+</tr>
+<!-- Row 2: Audio AC3 (Copy) -->
+<tr>
+<td class="text-center">
+<input checked="" class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] text-[#666]">2</td>
+<td><span class="font-semibold text-[#0d9488]">Audio</span></td>
+<td>
+<div class="font-mono text-[11px]">ac3</div>
+<div class="text-[10px] text-[#777777]">Dolby Digital 5.1</div>
+</td>
+<td>6 ch</td>
+<td><span class="px-1 py-0.5 bg-[#e0f2fe] text-[#0369a1] rounded text-[10px] font-bold">eng</span></td>
+<td>AC-3 5.1-EX</td>
+<td>
+<select class="fx-combobox w-full">
+<option selected="">Kopiuj</option>
+<option>PCM 24-bit</option>
+<option>PCM 16-bit</option>
+<option>AC-3 (re-encode)</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio" name="default_audio" title="Ustaw jako domyślną" type="radio"/>
+</td>
+</tr>
+<!-- Row 3: Audio DTS-HD MA (Target conversion: PCM 24-bit) -->
+<tr class="fx-row-convert">
+<td class="text-center">
+<input checked="" class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] font-medium">3</td>
+<td><span class="font-semibold text-[#0d9488]">Audio</span></td>
+<td>
+<div class="font-medium text-[#c2410c]">dts</div>
+<div class="text-[10px] text-[#666666]">DTS-HD MA 5.1</div>
+</td>
+<td class="font-semibold">6 ch</td>
+<td><span class="px-1 py-0.5 bg-[#e0f2fe] text-[#0369a1] rounded text-[10px] font-bold">eng</span></td>
+<td class="font-medium text-[#111827]">DTS-HD MA 5.1</td>
+<td>
+<select class="fx-combobox highlighted w-full font-medium">
+<option>Kopiuj</option>
+<option selected="">PCM 24-bit</option>
+<option>PCM 16-bit</option>
+<option>DTS (Core 1.5M)</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio" name="default_audio" title="Ustaw jako domyślną" type="radio"/>
+</td>
+</tr>
+<!-- Row 4: Audio Commentary (Unchecked / Disabled) -->
+<tr class="fx-row-disabled">
+<td class="text-center">
+<input class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px]">4</td>
+<td>Audio</td>
+<td class="font-mono text-[11px]">ac3</td>
+<td>2 ch</td>
+<td><span class="px-1 py-0.5 bg-[#eee] text-[#888] rounded text-[10px] font-mono">eng</span></td>
+<td class="truncate max-w-[200px]" title="Commentary by Nicolas Winding Refn">Commentary by Nicolas Winding Refn</td>
+<td>
+<select class="fx-combobox w-full opacity-60" disabled="">
+<option selected="">Kopiuj</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio opacity-50" disabled="" name="default_audio" type="radio"/>
+</td>
+</tr>
+<!-- Row 5: Audio Commentary 2 (Unchecked / Disabled) -->
+<tr class="fx-row-disabled">
+<td class="text-center">
+<input class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px]">5</td>
+<td>Audio</td>
+<td class="font-mono text-[11px]">ac3</td>
+<td>2 ch</td>
+<td><span class="px-1 py-0.5 bg-[#eee] text-[#888] rounded text-[10px] font-mono">eng</span></td>
+<td class="truncate max-w-[200px]" title="Commentary by Director NWR">Commentary by Director NWR</td>
+<td>
+<select class="fx-combobox w-full opacity-60" disabled="">
+<option selected="">Kopiuj</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio opacity-50" disabled="" name="default_audio" type="radio"/>
+</td>
+</tr>
+<!-- Row 6: Subtitle Polish (Default selected) -->
+<tr>
+<td class="text-center">
+<input checked="" class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] text-[#666]">6</td>
+<td><span class="font-semibold text-[#8b5cf6]">Napisy</span></td>
+<td class="font-mono text-[11px]">hdmv_pgs_subtitle</td>
+<td class="text-center text-[#777]">-</td>
+<td><span class="px-1 py-0.5 bg-[#fef2f2] text-[#b91c1c] rounded text-[10px] font-bold">pol</span></td>
+<td class="font-medium">Polski (dialogi)</td>
+<td>
+<select class="fx-combobox w-full">
+<option selected="">Kopiuj</option>
+<option>Konwertuj do SRT</option>
+</select>
+</td>
+<td class="text-center">
+<input checked="" class="fx-radio" name="default_sub" title="Domyślne napisy" type="radio"/>
+</td>
+</tr>
+<!-- Row 7: Subtitle English -->
+<tr>
+<td class="text-center">
+<input checked="" class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px] text-[#666]">7</td>
+<td><span class="font-semibold text-[#8b5cf6]">Napisy</span></td>
+<td class="font-mono text-[11px]">hdmv_pgs_subtitle</td>
+<td class="text-center text-[#777]">-</td>
+<td><span class="px-1 py-0.5 bg-[#e0f2fe] text-[#0369a1] rounded text-[10px] font-bold">eng</span></td>
+<td>English (SDH)</td>
+<td>
+<select class="fx-combobox w-full">
+<option selected="">Kopiuj</option>
+<option>Konwertuj do SRT</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio" name="default_sub" title="Domyślne napisy" type="radio"/>
+</td>
+</tr>
+<!-- Row 8: Subtitle French (Unchecked) -->
+<tr class="fx-row-disabled">
+<td class="text-center">
+<input class="fx-checkbox" type="checkbox"/>
+</td>
+<td class="text-center font-mono text-[11px]">8</td>
+<td>Napisy</td>
+<td class="font-mono text-[11px]">hdmv_pgs_subtitle</td>
+<td class="text-center text-[#777]">-</td>
+<td><span class="px-1 py-0.5 bg-[#eee] text-[#888] rounded text-[10px] font-mono">fre</span></td>
+<td>Français</td>
+<td>
+<select class="fx-combobox w-full opacity-60" disabled="">
+<option selected="">Kopiuj</option>
+</select>
+</td>
+<td class="text-center">
+<input class="fx-radio opacity-50" disabled="" name="default_sub" type="radio"/>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Output Destination Bar (Flat JavaFX FileChooser Input) -->
+<div class="bg-[#f7f7f7] border-t border-[#d8d8d8] px-2.5 py-1.5 flex items-center gap-2" data-purpose="output-path-box">
+<label class="text-xs font-semibold text-[#444444] shrink-0" for="outputPath">Plik wyjściowy:</label>
+<div class="flex-1 flex items-center">
+<input class="w-full text-xs font-mono bg-white border border-[#bebebe] rounded-l-[2px] px-2 py-1 text-[#333333] focus:outline-none focus:border-[#0078d7]" id="outputPath" readonly="" type="text" value="D:\Wideo\Gotowe\Drive.2011.UHD.BluRay.2160p.AudioFixed.mkv"/>
+<button class="fx-button rounded-l-none border-l-0 px-3 py-1 font-medium bg-[#efefef]" type="button">
+              Zmień…
+            </button>
+</div>
+</div>
+</section>
+<!-- END: Right Panel -->
+</div>
+<!-- END: SplitPane Body Layout -->
+<!-- BEGIN: Bottom Controls & Realtime Execution Bar -->
+<footer class="bg-[#f0f0f0] border-t border-[#c8c8c8] p-2 flex flex-col gap-1.5 shrink-0" data-purpose="execution-console-bar">
+<!-- Top Action & Progress Row -->
+<div class="flex items-center gap-2">
+<!-- Control buttons -->
+<button class="fx-button fx-button-primary px-4 py-1 text-xs" type="button">
+<svg class="w-3.5 h-3.5" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" fill-rule="evenodd"></path></svg>
+<span>Start</span>
+</button>
+<button class="fx-button px-3 py-1 text-xs font-medium border-[#f97316]/50 bg-[#fffbf7] text-[#c2410c]" type="button">
+<svg class="w-3.5 h-3.5 text-[#f97316]" fill="currentColor" viewbox="0 0 20 20"><path clip-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.381z" fill-rule="evenodd"></path></svg>
+<span>Szybka konwersja</span>
+</button>
+<button class="fx-button px-3 py-1 text-xs" type="button">
+<span>Anuluj</span>
+</button>
+<!-- Progress Information Section -->
+<div class="flex-1 flex flex-col justify-center ml-2">
+<div class="flex justify-between items-center text-[10.5px] font-medium text-[#444444] mb-1">
+<span>Konwertowanie: Ścieżka #1 &amp; #3 (PCM 24-bit)</span>
+<span class="font-semibold text-[#0066cc]">42% (Pozostało ok. 02:15)</span>
+</div>
+<!-- Flat JavaFX ProgressBar -->
+<div class="w-full h-3.5 bg-[#e0e0e0] border border-[#bcbcbc] rounded-[2px] p-[1px] overflow-hidden">
+<div class="h-full bg-gradient-to-r from-[#0078d7] to-[#1e88e5] w-[42%] rounded-[1px] transition-all duration-300"></div>
+</div>
+</div>
+</div>
+<!-- Realtime Monospace Output Console (JavaFX TextArea styling) -->
+<div class="h-[96px] bg-[#1e1e1e] border border-[#3e3e3e] rounded-[2px] p-2 overflow-y-auto font-mono text-[10.5px] leading-relaxed text-[#d4d4d4] select-text">
+<div class="text-[#888888] pb-0.5">AudioFix Engine v1.0.4 | FFmpeg version 6.1.1-full_build-www.gyan.dev (LGPL)</div>
+<div class="text-[#4ec9b0] truncate">&gt; ffmpeg -y -i "Drive.2011.UHD.BluRay.2160p.REMUX.mkv" -map 0:0 -c:v copy -map 0:1 -c:a:0 pcm_s24le -map 0:2 -c:a:1 copy -map 0:3 -c:a:2 pcm_s24le -map 0:6 -c:s:0 copy -map 0:7 -c:s:1 copy "D:\Wideo\Gotowe\Drive.2011.UHD.BluRay.2160p.AudioFixed.mkv"</div>
+<div class="text-[#9cdcfe]">[out#0/matroska @ 0000021b] Output #0 to 'D:\Wideo\Gotowe\Drive.2011.AudioFixed.mkv':</div>
+<div class="text-[#cccccc]">[out#0/matroska @ 0000021b] Stream #0:0: Video: hevc (Main 10), yuv420p10le(tv, bt2020nc/bt2020/smpte2084), 3840x2160, q=2-31, 23.98 fps</div>
+<div class="text-[#cccccc]">[out#0/matroska @ 0000021b] Stream #0:1: Audio: pcm_s24le, 48000 Hz, 7.1, s32 (24 bit), 9216 kb/s</div>
+<div class="text-[#cccccc]">[out#0/matroska @ 0000021b] Stream #0:2: Audio: ac3, 48000 Hz, 5.1(side), fltp, 640 kb/s</div>
+<div class="text-[#dcdcaa] font-bold">[progress] frame= 35420 fps=142 q=-0.0 size= 14208MB time=00:41:22.18 bitrate=47820.4kbits/s speed= 5.92x</div>
+</div>
+</footer>
+<!-- END: Bottom Controls & Realtime Execution Bar -->
+</div>
+<!-- END: Desktop Window Outer Frame -->
+</body></html>

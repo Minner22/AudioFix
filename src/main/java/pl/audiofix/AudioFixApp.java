@@ -12,6 +12,8 @@ import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ui.FfmpegSetup;
 import pl.audiofix.ui.MainController;
+import pl.audiofix.ui.theme.Theme;
+import pl.audiofix.ui.theme.ThemeFonts;
 
 import java.util.Optional;
 
@@ -33,6 +35,8 @@ public class AudioFixApp extends Application {
 
         log.info("AudioFix {} starting (Java {})", AppVersion.current(), Runtime.version());
 
+        ThemeFonts.load();
+
         Optional<FfmpegPaths> ffmpegPaths = FfmpegSetup.resolve(new FfmpegLocator());
         if (ffmpegPaths.isEmpty()) {
             Platform.exit();
@@ -45,7 +49,7 @@ public class AudioFixApp extends Application {
         controller.setFfmpegPaths(ffmpegPaths.get());
         controller.setHostServices(getHostServices());
 
-        primaryStage.setScene(new Scene(root, 1100, 700));
+        primaryStage.setScene(createScene(root));
         primaryStage.setTitle(windowTitle());
         primaryStage.show();
     }
@@ -53,6 +57,14 @@ public class AudioFixApp extends Application {
     static String windowTitle() {
 
         return WINDOW_TITLE + " " + AppVersion.current();
+    }
+
+    static Scene createScene(Parent root) {
+
+        Scene scene = new Scene(root, 1100, 700);
+        Theme.apply(scene);
+
+        return  scene;
     }
 
     @Override

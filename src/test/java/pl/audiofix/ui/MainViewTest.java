@@ -11,6 +11,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.Region;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -108,9 +109,33 @@ class MainViewTest {
     }
 
     @Test
-    void stylesheetIsAttached() {
-        assertTrue(root.getStylesheets().stream().anyMatch(s -> s.endsWith("styles.css")),
-                "styles.css not attached, stylesheets: " + root.getStylesheets());
+    void fxmlDoesNotAttachStylesheetsItself() {
+        // the theme is set on the Scene (Theme.apply), so #35 can switch it for the whole window
+        assertEquals(List.of(), root.getStylesheets());
+    }
+
+    @Test
+    void buttonVariantsFollowDesign() {
+        assertTrue(lookup("startButton", Button.class).getStyleClass().contains("button-primary"));
+        assertTrue(lookup("quickConvertButton", Button.class).getStyleClass().contains("button-warning"));
+        assertTrue(lookup("removeFromQueueButton", Button.class).getStyleClass().contains("button-danger"));
+    }
+
+    @Test
+    void buttonsAreNeverNarrowerThanTheirText() {
+        // long Polish (and later English) labels must not be cut to "Ustawienia…"
+        for (Node node : root.lookupAll(".button")) {
+            assertEquals(Region.USE_PREF_SIZE, ((Region) node).getMinWidth(),
+                    "minWidth=\"-Infinity\" missing on " + node.getId());
+        }
+    }
+
+    @Test
+    void sectionHeadersAndConsoleHaveStyleClasses() {
+        long headers = root.lookupAll(".section-header").size();
+
+        assertEquals(2, headers, "Kolejka and Ścieżki should be section headers");
+        assertTrue(lookup("logArea", TextArea.class).getStyleClass().contains("console"));
     }
 
     // ---------------------------------------------------------------- helpers

@@ -1,0 +1,47 @@
+/*
+   * AudioFix - light theme "Fluent Desktop Precision" (docs/design/stitch/fluent_desktop_precision.md).
+   * Only values: -af-* colors used by base.css and font families (JavaFX CSS cannot hold a font in a variable).
+   */
+
+.root {
+    -af-canvas: #f8fafc;
+    -af-surface: #ffffff;
+    -af-surface-muted: #f1f5f9;
+    -af-hover: #f8fafc;
+
+    -af-border: #cbd5e1;
+    -af-border-hover: #94a3b8;
+    -af-border-strong: #64748b;
+    -af-gridline: #f1f5f9;
+
+    -af-text: #0f172a;
+    -af-text-muted: #64748b;
+    -af-heading: #334155;
+    -af-header-text: #475569;
+    -af-prompt: #94a3b8;
+
+    -af-accent: #0284c7;
+    -af-accent-hover: #0369a1;
+    -af-on-accent: #ffffff;
+    -af-selection: #e0f2fe;
+    -af-track: #e2e8f0;
+
+    -af-convert: #ea580c;
+    -af-convert-bg: #fff7ed;
+    -af-convert-border: #fdba74;
+    -af-copy: #15803d;
+    -af-copy-bg: #f0fdf4;
+    -af-copy-border: #bbf7d0;
+    -af-danger: #b91c1c;
+    -af-danger-bg: #fef2f2;
+    -af-danger-border: #fca5a5;
+
+    -af-tooltip-bg: #0f172a;
+    -af-tooltip-text: #f8fafc;
+
+    -fx-font-family: "Segoe UI";
+}
+
+.console {
+    -fx-font-family: "Consolas";
+}

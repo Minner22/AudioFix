@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="pl.audiofix.ui.AboutController" spacing="10" prefWidth="520" stylesheets="@styles.css">
+      fx:controller="pl.audiofix.ui.AboutController" spacing="10" prefWidth="520">
     <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
     <Label fx:id="appVersionLabel" styleClass="about-title"/>
     <Label text="Poprawia ścieżki dźwiękowe w filmach, żeby dało się je odtworzyć na telewizorze." wrapText="true"/>
@@ -18,7 +18,7 @@
     <Label text="Licencje"/>
     <TextArea fx:id="licensesArea" editable="false" wrapText="true" prefRowCount="10" VBox.vgrow="ALWAYS"/>
     <HBox spacing="8" alignment="CENTER_RIGHT">
-        <Button fx:id="copyButton" text="Kopiuj informacje" onAction="#onCopy"/>
-        <Button fx:id="closeButton" text="Zamknij" onAction="#onClose" cancelButton="true" defaultButton="true"/>
+        <Button fx:id="copyButton" text="Kopiuj informacje" minWidth="-Infinity" onAction="#onCopy"/>
+        <Button fx:id="closeButton" text="Zamknij" minWidth="-Infinity" onAction="#onClose" cancelButton="true" defaultButton="true"/>
     </HBox>
 </VBox>

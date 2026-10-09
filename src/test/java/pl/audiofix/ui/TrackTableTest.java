@@ -298,10 +298,10 @@ class TrackTableTest {
 
     @Test
     void stylesheetDefinesRowStyles() throws Exception {
-        String css = new String(MainController.class.getResourceAsStream("styles.css").readAllBytes());
+        String css = new String(MainController.class.getResourceAsStream("theme/base.css").readAllBytes());
 
-        assertTrue(css.contains(":needs-conversion"), "styles.css has no :needs-conversion rule");
-        assertTrue(css.contains(":removed"), "styles.css has no :removed rule");
+        assertTrue(css.contains(":needs-conversion"), "base.css has no :needs-conversion rule");
+        assertTrue(css.contains(":removed"), "base.css has no :removed rule");
     }
 
     // ---------------------------------------------------------------- helpers
