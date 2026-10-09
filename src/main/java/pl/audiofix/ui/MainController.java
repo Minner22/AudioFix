@@ -1,6 +1,7 @@
 package pl.audiofix.ui;
 
 import javafx.application.HostServices;
+import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -10,10 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.audiofix.ffmpeg.*;
 import pl.audiofix.model.AudioCodec;
+import pl.audiofix.model.ConversionJob;
+import pl.audiofix.model.ConversionMode;
+import pl.audiofix.model.JobStatus;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.TrackPlan;
 import pl.audiofix.model.TrackPlans;
+import pl.audiofix.queue.JobQueue;
 import pl.audiofix.ui.theme.Theme;
 
 import java.io.File;
@@ -58,8 +63,9 @@ public class MainController {
     private List<TrackPlan> plans = List.of();
     private File lastDirectory;
     private Path output;
-    private ConversionTask conversion;
     private HostServices hostServices;
+
+    private final JobQueue queue = JobQueue.withFfmpeg(() -> ffmpegPaths.ffmpeg());
 
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
@@ -73,9 +79,7 @@ public class MainController {
 
     public void shutdown() {
 
-        if (conversion != null && conversion.isRunning()) {
-            conversion.stopNow();
-        }
+        queue.shutdown();
     }
 
     void showMedia(MediaInfo info) {
@@ -220,15 +224,13 @@ public class MainController {
             return;
         }
 
-        startConversion(new CommandBuilder().build(ffmpegPaths.ffmpeg(), mediaInfo.path(), output, plans));
+        startConversion(ConversionMode.PLANNED);
     }
 
     @FXML
     private void onCancel() {
 
-        if (conversion != null) {
-            conversion.cancel();
-        }
+        queue.cancelCurrent();
     }
 
     @FXML
@@ -249,34 +251,49 @@ public class MainController {
             return;
         }
 
-        startConversion(new CommandBuilder().buildQuick(ffmpegPaths.ffmpeg(), mediaInfo.path(), output));
+        startConversion(ConversionMode.QUICK);
     }
 
-    private void startConversion(List<String> command) {
+    private void startConversion(ConversionMode mode) {
 
-        appendLog(CommandBuilder.toCommandLine(command));
+        ConversionJob job = new ConversionJob(mediaInfo, plans, output, mode);
+        job.getLog().addListener((ListChangeListener<String>) change -> {
+            while (change.next()) {
+                change.getAddedSubList().forEach(this::appendLog);
+            }
+        } );
 
-        ConversionTask task = new ConversionTask(command, output, mediaInfo.durationSec(), this::appendLog);
-        task.setOnSucceeded(event -> {
-            setRunning(false);
-            appendLog("Gotowe: " + task.output());
-            showInfo("Konwersja zakończona", task.output().toString());
-        });
-        task.setOnFailed(event -> {
-            setRunning(false);
-            resetProgress();
-            showError("Konwersja nie powiodła się", task.getException());
-        });
-        task.setOnCancelled(event -> {
-            setRunning(false);
-            resetProgress();
-            appendLog("Anulowano");
-        });
+        job.statusProperty().addListener(((observable, previous, status) -> onJobFinished(job, status)));
 
-        conversion = task;
-        progressBar.progressProperty().bind(task.progressProperty());
+        progressBar.progressProperty().bind(job.progressProperty());
         setRunning(true);
-        Thread.ofVirtual().start(task);
+        queue.add(job);
+        queue.start();
+    }
+
+    private void onJobFinished(ConversionJob job, JobStatus status) {
+
+        switch (status) {
+            case DONE -> {
+                setRunning(false);
+                appendLog("Gotowe: " + job.getOutput());
+                showInfo("Konwersja zakończona", job.getOutput().toString());
+            }
+            case FAILED -> {
+                setRunning(false);
+                resetProgress();
+                log.warn("Conversion failed: {}", job.getErrorMessage());
+                showAlert(Alert.AlertType.ERROR, "Konwersja nie powiodła się", job.getErrorMessage());
+            }
+            case CANCELLED ->  {
+                setRunning(false);
+                resetProgress();
+                appendLog("Anulowano");
+            }
+            case PENDING, RUNNING -> {
+                // still converting
+            }
+        }
     }
 
     private void resetProgress() {

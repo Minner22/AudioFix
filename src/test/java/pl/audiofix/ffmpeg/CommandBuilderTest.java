@@ -2,6 +2,9 @@ package pl.audiofix.ffmpeg;
 
 import org.junit.jupiter.api.Test;
 import pl.audiofix.model.AudioCodec;
+import pl.audiofix.model.ConversionJob;
+import pl.audiofix.model.ConversionMode;
+import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
@@ -348,6 +351,33 @@ class CommandBuilderTest {
         List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
 
         assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata") || a.startsWith("-ac")));
+    }
+
+    // ---------------------------------------------------------------- queued job (#12)
+
+    @Test
+    void plannedJobUsesItsTrackPlans() {
+        List<TrackPlan> plans = typicalPlans();
+        plans.get(2).setKeep(false);
+        ConversionJob job = new ConversionJob(new MediaInfo(INPUT, 60, List.of()), plans, OUTPUT, ConversionMode.PLANNED);
+
+        assertEquals(builder.build(FFMPEG, INPUT, OUTPUT, plans), builder.build(FFMPEG, job));
+    }
+
+    @Test
+    void quickJobUsesQuickCommand() {
+        ConversionJob job = new ConversionJob(new MediaInfo(INPUT, 60, List.of()), typicalPlans(), OUTPUT, ConversionMode.QUICK);
+
+        assertEquals(builder.buildQuick(FFMPEG, INPUT, OUTPUT), builder.build(FFMPEG, job));
+    }
+
+    @Test
+    void jobCommandWritesToCurrentOutput() {
+        ConversionJob job = new ConversionJob(new MediaInfo(INPUT, 60, List.of()), typicalPlans(), OUTPUT, ConversionMode.PLANNED);
+        Path changed = Path.of("E:\\Wynik.mkv");
+        job.setOutput(changed);
+
+        assertEquals(changed.toString(), builder.build(FFMPEG, job).getLast());
     }
 
     // ---------------------------------------------------------------- buildQuick (#21)

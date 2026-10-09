@@ -1,6 +1,7 @@
 package pl.audiofix.ffmpeg;
 
 import pl.audiofix.model.AudioCodec;
+import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
@@ -16,6 +17,14 @@ public class CommandBuilder {
     private static final List<String> COPY_ATTACHMENTS_AND_CHAPTERS = List.of("-map", "0:t?", "-map_chapters", "0");
     private static final List<String> COPY_ALL_STREAMS = List.of("-c", "copy");
     private static final List<String> PROGRESS_TO_STDOUT = List.of("-progress", "pipe:1", "-nostats");
+
+    public List<String> build(Path ffmpeg, ConversionJob job) {
+
+        return switch (job.getMode()) {
+            case PLANNED -> build(ffmpeg, job.getInput(), job.getOutput(), job.getPlans());
+            case QUICK -> buildQuick(ffmpeg, job.getInput(), job.getOutput());
+        };
+    }
 
     public List<String> build(Path ffmpeg, Path input, Path output, List<TrackPlan> plans) {
 
