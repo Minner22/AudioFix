@@ -10,16 +10,17 @@ import pl.audiofix.ui.theme.Theme;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Runs JavaFX code in tests without showing any window.
  */
-final class FxTestSupport {
+public final class FxTestSupport {
 
     private FxTestSupport() {
     }
 
-    static void startJavaFx() {
+    public static void startJavaFx() {
         CompletableFuture<Void> started = new CompletableFuture<>();
         try {
             Platform.startup(() -> started.complete(null));
@@ -31,12 +32,12 @@ final class FxTestSupport {
     }
 
     /** Code that may throw, to be run on the JavaFX Application Thread. */
-    interface FxAction {
+    public interface FxAction {
         void run() throws Exception;
     }
 
     /** Runs the action on the JavaFX Application Thread and waits until it is done. */
-    static void onFxThread(FxAction action) throws Exception {
+    public static void onFxThread(FxAction action) throws Exception {
         CompletableFuture<Void> done = new CompletableFuture<>();
         Platform.runLater(() -> {
             try {
@@ -54,6 +55,18 @@ final class FxTestSupport {
             }
             throw e;
         }
+    }
+
+    /** Code that returns a value, to be run on the JavaFX Application Thread. */
+    public interface FxCall<T> {
+        T call() throws Exception;
+    }
+
+    /** Runs the call on the JavaFX Application Thread and returns its result. */
+    public static <T> T callOnFxThread(FxCall<T> call) throws Exception {
+        AtomicReference<T> result = new AtomicReference<>();
+        onFxThread(() -> result.set(call.call()));
+        return result.get();
     }
 
     /** Loads main-view.fxml; must be called on the JavaFX Application Thread. */
