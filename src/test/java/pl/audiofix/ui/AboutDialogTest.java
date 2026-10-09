@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import pl.audiofix.AppVersion;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ffmpeg.TestMedia;
+import pl.audiofix.ui.theme.Theme;
 
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,15 @@ class AboutDialogTest {
         assertEquals(Modality.WINDOW_MODAL, stage.get().getModality());
         assertFalse(stage.get().isResizable());
         assertEquals("AudioFix " + AppVersion.current(), label("appVersionLabel").getText());
+    }
+
+    @Test
+    void windowUsesCurrentTheme() throws Exception {
+        FfmpegPaths missing = FfmpegPaths.fromFfmpeg(dir.resolve("ffmpeg.exe"));
+
+        onFxThread(() -> stage.set(AboutDialog.show(null, missing, null)));
+
+        assertEquals(Theme.current().stylesheets(), stage.get().getScene().getStylesheets());
     }
 
     @Test

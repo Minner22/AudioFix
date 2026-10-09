@@ -14,6 +14,7 @@ import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.TrackPlan;
 import pl.audiofix.model.TrackPlans;
+import pl.audiofix.ui.theme.Theme;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -322,6 +323,7 @@ public class MainController {
 
         Alert alert = new Alert(type);
         alert.initOwner(window());
+        Theme.apply(alert);
         alert.setTitle(WINDOW_TITLE);
         alert.setHeaderText(header);
         alert.setContentText(content);

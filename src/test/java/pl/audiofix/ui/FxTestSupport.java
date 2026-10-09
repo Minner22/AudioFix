@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import pl.audiofix.AudioFixApp;
+import pl.audiofix.ui.theme.Theme;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -59,7 +60,7 @@ final class FxTestSupport {
     static FXMLLoader loadMainView() throws Exception {
         FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
         Parent root = loader.load();
-        new Scene(root, 1100, 700);
+        Theme.apply(new Scene(root, 1100, 700));
         layout(root);
         return loader;
     }

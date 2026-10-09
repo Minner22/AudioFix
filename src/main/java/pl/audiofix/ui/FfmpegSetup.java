@@ -5,6 +5,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
+import pl.audiofix.ui.theme.Theme;
 
 import java.io.File;
 import java.util.Optional;
@@ -27,6 +28,7 @@ public final class FfmpegSetup {
         }
 
         Alert info = new Alert(Alert.AlertType.INFORMATION);
+        Theme.apply(info);
         info.setTitle(WINDOW_TITLE);
         info.setHeaderText("Nie znaleziono ffmpeg");
         info.setContentText("Wskaż plik ffmpeg.exe. W tym samym folderze musi znajdować się plik ffprobe.exe.");
@@ -55,6 +57,7 @@ public final class FfmpegSetup {
                 return Optional.of(locator.save(file.toPath()));
             } catch (IllegalArgumentException e) {
                 Alert error = new Alert(Alert.AlertType.ERROR);
+                Theme.apply(error);
                 error.initOwner(owner);
                 error.setTitle(WINDOW_TITLE);
                 error.setHeaderText("Nieprawidłowy plik ffmpeg");
