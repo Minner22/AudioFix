@@ -80,7 +80,6 @@ public class MainController {
     public void shutdown() {
 
         queue.shutdown();
-        queue.shutdown();
     }
 
     void showMedia(MediaInfo info) {

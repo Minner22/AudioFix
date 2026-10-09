@@ -170,6 +170,6 @@ public class ConversionJob {
     @Override
     public String toString() {
 
-        return mediaInfo.path().getFileName() + "(" + getStatus() + ")";
+        return mediaInfo.path().getFileName() + " (" + getStatus() + ")";
     }
 }
