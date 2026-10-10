@@ -6,8 +6,12 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -35,7 +39,11 @@ import static pl.audiofix.AudioFixApp.WINDOW_TITLE;
 
 public class MainController {
 
+    private static final PseudoClass DRAG_OVER = PseudoClass.getPseudoClass("drag-over");
+
     private static final Logger log = LoggerFactory.getLogger(MainController.class);
+
+    @FXML private BorderPane rootPane;
 
     @FXML private Button addFilesButton;
     @FXML private Button ffmpegSettingsButton;
@@ -105,7 +113,7 @@ public class MainController {
 
         queueList.setItems(queue.getJobs());
         queueList.setCellFactory(list -> new QueueCell());
-        queueList.setPlaceholder(new Label("Dodaj pliki, aby utworzyć kolejkę"));
+        queueList.setPlaceholder(new Label("Przeciągnij tu filmy albo użyj [Dodaj pliki…]"));
         queueList.getSelectionModel().selectedItemProperty().addListener((observable, previous, job) -> showJob(job));
 
         queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> updateControls());
@@ -134,6 +142,7 @@ public class MainController {
         TrackTableConfigurer.configureDefault(defaultColumn);
 
         outputField.setEditable(false);
+        configureDragAndDrop();
         updateControls();
     }
 
@@ -143,7 +152,7 @@ public class MainController {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Wybierz filmy");
         chooser.getExtensionFilters()
-                .add(new FileChooser.ExtensionFilter("Filmy (*.mkv, *.mp4, *.m2ts)", "*.mkv", "*.mp4", "*.m2ts"));
+                .add(new FileChooser.ExtensionFilter("Filmy (" + String.join(", ", DroppedFiles.chooserPatterns()) + ")", DroppedFiles.chooserPatterns()));
 
         if (lastDirectory != null && lastDirectory.isDirectory()) {
             chooser.setInitialDirectory(lastDirectory);
@@ -155,6 +164,69 @@ public class MainController {
         }
         lastDirectory = files.getFirst().getParentFile();
         addFiles(files.stream().map(File::toPath).toList());
+    }
+
+    private void configureDragAndDrop() {
+
+        rootPane.setOnDragOver(event -> {
+            if (acceptsDrag(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            }
+            event.consume();
+        });
+        rootPane.setOnDragEntered(event -> {
+            rootPane.pseudoClassStateChanged(DRAG_OVER, acceptsDrag(event));
+            event.consume();
+        });
+        rootPane.setOnDragExited(event -> {
+            rootPane.pseudoClassStateChanged(DRAG_OVER, false);
+            event.consume();
+        });
+        rootPane.setOnDragDropped(event -> {
+            boolean added = event.getDragboard().hasFiles()
+                    && dropFiles(event.getDragboard().getFiles().stream()
+                    .map(File::toPath)
+                    .toList());
+            event.setDropCompleted(added);
+            event.consume();
+        });
+    }
+
+    private boolean acceptsDrag(DragEvent event) {
+
+        return canAddFiles()
+                && event.getDragboard().hasFiles()
+                && DroppedFiles.mayContainFilms(event.getDragboard().getFiles().stream()
+                .map(File::toPath)
+                .toList());
+    }
+
+    boolean dropFiles(List<Path> dropped) {
+
+        if (!canAddFiles()) {
+            return false;
+        }
+
+        DroppedFiles files = DroppedFiles.of(dropped);
+        if (!files.skipped().isEmpty()) {
+            log.info("Skipped dropped files: {}", files.skipped());
+            showWarning(files.supported().isEmpty() ? "Brak filmów do dodania" : "Pominięto część plików",
+                    "Obsługiwane są pliki " + String.join(", ", DroppedFiles.chooserPatterns())
+                            + " i foldery z nimi. Pominięto: " + System.lineSeparator() + fileNames(files.skipped()));
+        }
+        if (files.supported().isEmpty()) {
+            return false;
+        }
+
+        lastDirectory = files.supported().getFirst().getParent().toFile();
+        addFiles(files.supported());
+
+        return true;
+    }
+
+    private boolean canAddFiles() {
+
+        return !queue.isRunning() && !loading;
     }
 
     void addFiles(List<Path> files) {
@@ -495,7 +567,7 @@ public class MainController {
         boolean running = queue.isRunning();
         boolean editable = shown != null && shown.isEditable();
 
-        addFilesButton.setDisable(running || loading);
+        addFilesButton.setDisable(!canAddFiles());
         ffmpegSettingsButton.setDisable(running);
         startButton.setDisable(running);
         quickConvertButton.setDisable(running);

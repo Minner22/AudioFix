@@ -479,3 +479,16 @@
 .queue-cell .queue-progress > .bar {
     -fx-padding: 2;
 }
+
+/* ------------------------------------------------------------------ drag and drop (#49) */
+
+/* transparent border all the time, so showing it while dragging does not move the layout */
+.drop-target {
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-border-style: segments(6, 4);
+}
+
+.drop-target:drag-over {
+    -fx-border-color: -af-accent;
+}

@@ -139,6 +139,15 @@ class MainViewTest {
         assertTrue(lookup("logArea", TextArea.class).getStyleClass().contains("console"));
     }
 
+    @Test
+    void wholeWindowAcceptsDroppedFiles() {
+        // drag and drop handlers sit on the root, so a drop anywhere in the window works
+        assertNotNull(root.getOnDragOver());
+        assertNotNull(root.getOnDragDropped());
+        assertNotNull(root.getOnDragExited(), "the highlight must be removed when the drag leaves the window");
+        assertTrue(root.getStyleClass().contains("drop-target"));
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private static <T extends Node> T lookup(String id, Class<T> type) {

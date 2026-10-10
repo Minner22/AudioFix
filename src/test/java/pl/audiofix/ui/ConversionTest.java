@@ -287,6 +287,50 @@ class ConversionTest {
         assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Uszkodzony.mkv")), alertTexts().toString());
     }
 
+    // ---------------------------------------------------------------- drag and drop (#49)
+
+    @Test
+    void droppedFolderAddsItsFilmsSortedByName() throws Exception {
+        Path season = Files.createDirectory(dir.resolve("Sezon 1"));
+        Files.copy(sample, season.resolve("Odcinek 2.mkv"));
+        Files.copy(sample, season.resolve("Odcinek 1.mkv"));
+        Files.writeString(season.resolve("Odcinek 1.srt"), "1");
+
+        boolean added = FxTestSupport.callOnFxThread(() -> controller.dropFiles(List.of(season)));
+        waitUntil(() -> queueList.getItems().size() == 3 && !addFilesButton.isDisable(), "films were not added");
+
+        assertTrue(added);
+        assertEquals(List.of(sample.getFileName().toString(), "Odcinek 1.mkv", "Odcinek 2.mkv"),
+                queueList.getItems().stream().map(job -> ((ConversionJob) job).getInput().getFileName().toString()).toList());
+        assertTrue(alertTexts().isEmpty(), "subtitles inside a folder are skipped silently: " + alertTexts());
+    }
+
+    @Test
+    void droppedFilmAndOtherFileAddsFilmAndNamesTheOther() throws Exception {
+        Path film = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        Path notes = Files.writeString(dir.resolve("notatki.txt"), "x");
+
+        onFxThread(() -> controller.dropFiles(List.of(notes, film)));
+        waitUntil(() -> queueList.getItems().size() == 2 && !addFilesButton.isDisable(), "film was not added");
+
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("notatki.txt")), alertTexts().toString());
+    }
+
+    @Test
+    void dropDuringConversionIsIgnored() throws Exception {
+        Path film = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        AtomicBoolean added = new AtomicBoolean(true);
+
+        onFxThread(() -> {
+            startButton.fire();
+            added.set(controller.dropFiles(List.of(film)));
+        });
+        waitUntilFinished();
+
+        assertFalse(added.get(), "drop must be refused like [Dodaj pliki…] while converting");
+        assertEquals(1, queueList.getItems().size());
+    }
+
     // ---------------------------------------------------------------- quick conversion (#21)
 
     @Test
