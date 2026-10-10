@@ -54,6 +54,18 @@ class MediaInfoTest {
         assertThrows(UnsupportedOperationException.class, () -> info.streams().add(SUBS));
     }
 
+    @Test
+    void sizeIsKept() {
+        var info = new MediaInfo(Path.of("film.mkv"), 7200.0, List.of(VIDEO), 34_789_235_712L);
+
+        assertEquals(34_789_235_712L, info.sizeBytes());
+    }
+
+    @Test
+    void sizeIsZeroWhenNotGiven() {
+        assertEquals(0, mediaInfo(List.of(VIDEO)).sizeBytes());
+    }
+
     private static MediaInfo mediaInfo(List<StreamInfo> streams) {
         return new MediaInfo(Path.of("film.mkv"), 7200.0, streams);
     }

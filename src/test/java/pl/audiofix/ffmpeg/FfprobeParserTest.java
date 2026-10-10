@@ -169,6 +169,42 @@ class FfprobeParserTest {
     }
 
     @Test
+    void parsesFileSizeFromString() {
+        String json = """
+                { "streams": [], "format": { "duration": "10.0", "size": "34789235712" } }
+                """;
+
+        assertEquals(34_789_235_712L, parser.parse(FILE, json).sizeBytes());
+    }
+
+    @Test
+    void missingSizeGivesZero() {
+        String json = """
+                { "streams": [], "format": { "duration": "10.0" } }
+                """;
+
+        assertEquals(0, parser.parse(FILE, json).sizeBytes());
+    }
+
+    @Test
+    void nonNumericSizeGivesZero() {
+        String json = """
+                { "streams": [], "format": { "size": "N/A" } }
+                """;
+
+        assertEquals(0, parser.parse(FILE, json).sizeBytes());
+    }
+
+    @Test
+    void missingFormatGivesZeroSize() {
+        String json = """
+                { "streams": [] }
+                """;
+
+        assertEquals(0, parser.parse(FILE, json).sizeBytes());
+    }
+
+    @Test
     void missingStreamsGivesEmptyList() {
         String json = """
                 { "format": { "duration": "10.0" } }
@@ -199,6 +235,7 @@ class FfprobeParserTest {
         assertTrue(info.streams().stream().anyMatch(s -> s.type() == StreamType.VIDEO), "no video stream");
         assertTrue(info.audioStreams().stream().anyMatch(StreamInfo::isDts), "no DTS audio stream");
         assertTrue(info.durationSec() > 0, "duration not parsed");
+        assertEquals(54_744_830_678L, info.sizeBytes(), "size not parsed");
         for (int i = 0; i < info.streams().size(); i++) {
             assertEquals(i, info.streams().get(i).index(), "stream order differs from ffprobe indexes");
         }

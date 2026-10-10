@@ -457,23 +457,62 @@
     -fx-font-weight: bold;
 }
 
-/* ------------------------------------------------------------------ queue list (#13, look refined in #47) */
+/* ------------------------------------------------------------------ queue list (#13, #47) */
 
-.queue-cell .queue-status {
+/* separator and the selected item's left edge are background layers, so the content never moves */
+.queue-cell:filled {
+    -fx-background-color: -af-gridline, -af-surface;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 6 8 7 8;
+}
+
+.queue-cell:filled:hover {
+    -fx-background-color: -af-gridline, -af-hover;
+}
+
+.queue-cell:filled:selected {
+    -fx-background-color: -af-gridline, -af-accent, -af-selection;
+    -fx-background-insets: 0, 0 0 1 0, 0 0 1 3;
+}
+
+.queue-cell:selected .queue-name {
+    -fx-font-weight: bold;
+}
+
+.queue-cell .queue-details {
     -fx-font-size: 11px;
     -fx-text-fill: -af-text-muted;
 }
 
+/* status badge: border layer + fill layer, like the codec badges */
+.queue-cell .queue-status {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-color: -af-track, -af-track;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 2, 1;
+    -fx-padding: 1 6 1 6;
+    -fx-text-fill: -af-header-text;
+}
+
 .queue-cell .queue-status.status-running {
-    -fx-text-fill: -af-accent;
+    -fx-background-color: -af-accent, -af-accent;
+    -fx-text-fill: -af-on-accent;
 }
 
 .queue-cell .queue-status.status-done {
+    -fx-background-color: -af-copy-border, -af-copy-bg;
     -fx-text-fill: -af-copy;
 }
 
 .queue-cell .queue-status.status-failed {
+    -fx-background-color: -af-danger-border, -af-danger-bg;
     -fx-text-fill: -af-danger;
+}
+
+.queue-cell .queue-status.status-cancelled {
+    -fx-background-color: -af-border, -af-surface;
+    -fx-text-fill: -af-text-muted;
 }
 
 .queue-cell .queue-progress > .bar {
