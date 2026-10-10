@@ -214,6 +214,7 @@
 
 .check-box:selected > .box > .mark {
     -fx-background-color: -af-on-accent;
+    -fx-background-insets: 0;
 }
 
 .radio-button:selected > .radio {
@@ -222,6 +223,7 @@
 
 .radio-button:selected > .radio > .dot {
     -fx-background-color: -af-accent;
+    -fx-background-insets: 0;
 }
 
 /* ------------------------------------------------------------------ lists */
@@ -453,4 +455,27 @@
 .dialog-pane > .header-panel .label {
     -fx-font-size: 13px;
     -fx-font-weight: bold;
+}
+
+/* ------------------------------------------------------------------ queue list (#13, look refined in #47) */
+
+.queue-cell .queue-status {
+    -fx-font-size: 11px;
+    -fx-text-fill: -af-text-muted;
+}
+
+.queue-cell .queue-status.status-running {
+    -fx-text-fill: -af-accent;
+}
+
+.queue-cell .queue-status.status-done {
+    -fx-text-fill: -af-copy;
+}
+
+.queue-cell .queue-status.status-failed {
+    -fx-text-fill: -af-danger;
+}
+
+.queue-cell .queue-progress > .bar {
+    -fx-padding: 2;
 }

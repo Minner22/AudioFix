@@ -1,12 +1,16 @@
 package pl.audiofix.ui.theme;
 
 import javafx.application.Platform;
+import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -147,6 +151,41 @@ class ThemeTest {
         Label header = (Label) root.lookup(".section-header");
         assertEquals(13, header.getFont().getSize(), 0.01);
         assertTrue(header.getFont().getStyle().contains("Bold"), header.getFont().toString());
+    }
+
+    @Test
+    void selectedRadioDotIsCentered() throws Exception {
+        // Modena draws the dot in two layers, the first shifted 1px down; with one flat color that shift stays
+        Bounds[] bounds = onFxThread(() -> {
+            RadioButton radio = new RadioButton();
+            radio.setSelected(true);
+            Theme.apply(new Scene(new VBox(radio)));
+            radio.applyCss();
+            radio.layout();
+            Region circle = (Region) radio.lookup(".radio");
+            Region dot = (Region) radio.lookup(".dot");
+            assertEquals(Insets.EMPTY, dot.getBackground().getFills().getFirst().getInsets());
+            return new Bounds[] {circle.getLayoutBounds(), dot.getBoundsInParent()};
+        });
+
+        Bounds circle = bounds[0];
+        Bounds dot = bounds[1];
+        assertEquals(circle.getWidth() / 2, dot.getMinX() + dot.getWidth() / 2, 0.01, "horizontal center");
+        assertEquals(circle.getHeight() / 2, dot.getMinY() + dot.getHeight() / 2, 0.01, "vertical center");
+    }
+
+    @Test
+    void checkMarkIsNotShifted() throws Exception {
+        Insets insets = onFxThread(() -> {
+            CheckBox check = new CheckBox();
+            check.setSelected(true);
+            Theme.apply(new Scene(new VBox(check)));
+            check.applyCss();
+            check.layout();
+            return ((Region) check.lookup(".mark")).getBackground().getFills().getFirst().getInsets();
+        });
+
+        assertEquals(Insets.EMPTY, insets);
     }
 
     // ---------------------------------------------------------------- helpers

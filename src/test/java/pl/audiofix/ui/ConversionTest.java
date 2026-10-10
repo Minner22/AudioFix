@@ -3,6 +3,8 @@ package pl.audiofix.ui;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ffmpeg.FfprobeService;
 import pl.audiofix.ffmpeg.TestMedia;
+import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.TrackPlan;
@@ -63,6 +66,7 @@ class ConversionTest {
     private ProgressBar progressBar;
     private TextArea logArea;
     private TextField outputField;
+    private ListView<?> queueList;
 
     @BeforeAll
     static void setUpAll() throws Exception {
@@ -90,8 +94,9 @@ class ConversionTest {
             progressBar = (ProgressBar) root.lookup("#progressBar");
             logArea = (TextArea) root.lookup("#logArea");
             outputField = (TextField) root.lookup("#outputField");
+            queueList = (ListView<?>) root.lookup("#queueList");
 
-            controller.loadFile(input);   // same path as [Dodaj pliki…]: ffprobe in a background Task
+            controller.addFiles(List.of(input));   // same path as [Dodaj pliki…]: ffprobe in a background Task
         });
         waitUntil(() -> table.getItems().size() == 4, "file was not loaded");
     }
@@ -160,28 +165,126 @@ class ConversionTest {
             startButton.fire();
             lockedRightAfterStart.set(startButton.isDisable()
                     && !cancelButton.isDisable()
-                    && addFilesButton.isDisable()
-                    && table.isDisable());
+                    && addFilesButton.isDisable());
         });
         assertTrue(lockedRightAfterStart.get(), "controls should be locked while converting");
 
+        // the table locks when the shown file itself starts converting (other waiting files stay editable)
+        waitUntil(() -> table.isDisable() || !startButton.isDisable(), "table was not locked");
         waitUntilFinished();
 
         assertFalse(startButton.isDisable());
         assertTrue(cancelButton.isDisable());
         assertFalse(addFilesButton.isDisable());
-        assertFalse(table.isDisable());
+        assertTrue(table.isDisable(), "a converted file cannot be edited any more");
     }
 
     @Test
-    void conversionCanBeStartedAgain() throws Exception {
+    void convertedFileCanBeAddedAndConvertedAgain() throws Exception {
+        Path first = outputPath();
         onFxThread(startButton::fire);
         waitUntilFinished();
+
+        onFxThread(() -> controller.addFiles(List.of(dir.resolve(sample.getFileName()))));
+        waitUntil(() -> queueList.getItems().size() == 2, "file was not added again");
+        Path second = outputPath();
+        onFxThread(startButton::fire);
+        waitUntilFinished();
+
+        assertTrue(Files.isRegularFile(first));
+        assertTrue(Files.isRegularFile(second));
+        assertTrue(second.getFileName().toString().endsWith("_fixed (1).mkv"), "first output must not be overwritten: " + second);
+    }
+
+    @Test
+    void startWithNothingWaitingDoesNotRunAnything() throws Exception {
+        onFxThread(startButton::fire);
+        waitUntilFinished();
+        Path output = outputPath();
+        long modified = Files.getLastModifiedTime(output).toMillis();
+
+        onFxThread(startButton::fire);
+
+        assertFalse(startButton.isDisable(), "the only file is done - nothing to start");
+        assertEquals(modified, Files.getLastModifiedTime(output).toMillis());
+    }
+
+    // ---------------------------------------------------------------- several files (#13)
+
+    @Test
+    void queueConvertsEveryFileWithItsOwnSettings() throws Exception {
+        Path firstOutput = outputPath();
+        onFxThread(() -> plan(2).setKeep(false));   // first file: drop AC3
+        Path second = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        onFxThread(() -> controller.addFiles(List.of(second)));
+        waitUntil(() -> queueList.getItems().size() == 2, "second file was not added");
+        Path secondOutput = outputPath();
 
         onFxThread(startButton::fire);
         waitUntilFinished();
 
-        assertTrue(Files.isRegularFile(outputPath()));
+        FfprobeService probe = new FfprobeService(paths);
+        assertEquals(List.of("mpeg4", "pcm_s24le", "subrip"), codecs(probe.probe(firstOutput)));
+        assertEquals(List.of("mpeg4", "pcm_s24le", "ac3", "subrip"), codecs(probe.probe(secondOutput)));
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Gotowe: 2")), alertTexts().toString());
+    }
+
+    @Test
+    void quickConversionConvertsAllWaitingFiles() throws Exception {
+        Path firstOutput = outputPath();
+        Path second = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        onFxThread(() -> controller.addFiles(List.of(second)));
+        waitUntil(() -> queueList.getItems().size() == 2, "second file was not added");
+        Path secondOutput = outputPath();
+
+        onFxThread(quickConvertButton::fire);
+        waitUntilFinished();
+
+        FfprobeService probe = new FfprobeService(paths);
+        assertEquals(List.of("mpeg4", "pcm_s24le", "ass"), codecs(probe.probe(firstOutput)));
+        assertEquals(List.of("mpeg4", "pcm_s24le", "ass"), codecs(probe.probe(secondOutput)));
+    }
+
+    @Test
+    void summaryListsFailedFilesAndQueueGoesOn() throws Exception {
+        Path second = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        onFxThread(() -> controller.addFiles(List.of(second)));
+        waitUntil(() -> queueList.getItems().size() == 2, "second file was not added");
+        Path secondOutput = outputPath();
+        Files.delete(dir.resolve(sample.getFileName()));   // first file disappears after loading
+
+        onFxThread(startButton::fire);
+        waitUntilFinished();
+
+        assertTrue(Files.isRegularFile(secondOutput), "second file should still be converted");
+        String summary = String.join("\n", alertTexts());
+        assertTrue(summary.contains("Konwersja zakończona z błędami"), summary);
+        assertTrue(summary.contains("Gotowe: 1"), summary);
+        assertTrue(summary.contains("Błędy: 1"), summary);
+        assertTrue(summary.contains(sample.getFileName().toString()), "failed file should be named: " + summary);
+    }
+
+    @Test
+    void severalFilesCanBeAddedAtOnce() throws Exception {
+        Path second = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+        Path third = Files.copy(sample, dir.resolve("Odcinek 3.mkv"));
+
+        onFxThread(() -> controller.addFiles(List.of(second, third)));
+        waitUntil(() -> queueList.getItems().size() == 3, "files were not added");
+
+        assertEquals(List.of(sample.getFileName().toString(), "Odcinek 2.mkv", "Odcinek 3.mkv"),
+                queueList.getItems().stream().map(job -> ((ConversionJob) job).getInput().getFileName().toString()).toList());
+    }
+
+    @Test
+    void unreadableFileIsReportedAndOthersAreAdded() throws Exception {
+        Path broken = Files.writeString(dir.resolve("Uszkodzony.mkv"), "to nie jest film");
+        Path second = Files.copy(sample, dir.resolve("Odcinek 2.mkv"));
+
+        onFxThread(() -> controller.addFiles(List.of(broken, second)));
+        waitUntil(() -> queueList.getItems().size() == 2 && !addFilesButton.isDisable(), "second file was not added");
+
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Uszkodzony.mkv")), alertTexts().toString());
     }
 
     // ---------------------------------------------------------------- quick conversion (#21)
@@ -206,7 +309,7 @@ class ConversionTest {
         onFxThread(() -> {
             quickConvertButton.fire();
             locked.set(quickConvertButton.isDisable() && startButton.isDisable()
-                    && !cancelButton.isDisable() && table.isDisable());
+                    && !cancelButton.isDisable() && addFilesButton.isDisable());
         });
         assertTrue(locked.get(), "controls should be locked during quick conversion");
 
@@ -254,6 +357,19 @@ class ConversionTest {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    private static List<String> codecs(MediaInfo info) {
+        return info.streams().stream().map(StreamInfo::codec).toList();
+    }
+
+    /** Header and content of every open alert. */
+    private static List<String> alertTexts() throws Exception {
+        return FxTestSupport.callOnFxThread(() -> Window.getWindows().stream()
+                .filter(window -> window.getScene() != null && window.getScene().getRoot() instanceof DialogPane)
+                .map(window -> (DialogPane) window.getScene().getRoot())
+                .map(pane -> pane.getHeaderText() + "\n" + pane.getContentText())
+                .toList());
+    }
 
     private Path outputPath() {
         return Path.of(outputField.getText());

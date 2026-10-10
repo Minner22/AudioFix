@@ -1,8 +1,11 @@
 package pl.audiofix.queue;
 
 import javafx.application.Platform;
+import javafx.beans.Observable;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import org.slf4j.Logger;
@@ -31,7 +34,9 @@ public class JobQueue {
     private static final Logger log = LoggerFactory.getLogger(JobQueue.class);
     private static final long SHUTDOWN_WAIT_SECONDS = 15;
 
-    private final ObservableList<ConversionJob> jobs = FXCollections.observableArrayList();
+    private final ObservableList<ConversionJob> jobs =
+            FXCollections.observableArrayList(job -> new Observable[]{job.statusProperty()});
+    private final ReadOnlyObjectWrapper<ConversionJob> currentJob = new ReadOnlyObjectWrapper<>();
     private final ReadOnlyBooleanWrapper running = new ReadOnlyBooleanWrapper();
     private final Function<ConversionJob, List<String>> commands;
     private final ExecutorService worker = Executors.newSingleThreadExecutor(
@@ -104,6 +109,11 @@ public class JobQueue {
         }
     }
 
+    public ReadOnlyObjectProperty<ConversionJob> currentJobProperty() {
+
+        return currentJob.getReadOnlyProperty();
+    }
+
     private void processPending() {
         while (true) {
             FfmpegRunner runner = new FfmpegRunner();
@@ -144,6 +154,7 @@ public class JobQueue {
     }
 
     private Optional<Next> takeNext(FfmpegRunner runner) {
+
         if (shuttingDown) {
             running.set(false);
             return Optional.empty();
@@ -163,6 +174,8 @@ public class JobQueue {
             }
             job.appendLog(CommandBuilder.toCommandLine(command));
             active = new Active(job, runner);
+            currentJob.set(job);
+
             return Optional.of(new Next(job, command, job.getOutput(), job.getMediaInfo().durationSec()));
         }
         running.set(false);
@@ -170,7 +183,10 @@ public class JobQueue {
     }
 
     private void finish(ConversionJob job, JobStatus result, String errorMessage) {
+
         active = null;
+        currentJob.set(null);
+
         switch (result) {
             case DONE -> job.markDone();
             case FAILED -> job.markFailed(errorMessage);
