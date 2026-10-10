@@ -3,11 +3,15 @@ package pl.audiofix.model;
 import java.nio.file.Path;
 import java.util.List;
 
-public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams) {
+public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams, long sizeBytes) {
 
     public MediaInfo {
 
         streams = List.copyOf(streams);
+    }
+
+    public MediaInfo(Path path, double durationSec, List<StreamInfo> streams) {
+        this(path, durationSec, streams, 0);
     }
 
     public List<StreamInfo> audioStreams() {

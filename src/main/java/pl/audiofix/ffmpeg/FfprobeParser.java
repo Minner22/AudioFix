@@ -34,7 +34,22 @@ public class FfprobeParser {
                 .map(FfprobeParser::toStreamInfo)
                 .toList();
 
-        return new MediaInfo(file, durationSec(output.format()), streams);
+        return new MediaInfo(file, durationSec(output.format()), streams, sizeBytes(output.format()));
+    }
+
+    private static long sizeBytes(ProbeFormat format) {
+
+        if (format == null || format.size() == null) {
+
+            return 0;
+        }
+
+        try {
+            return Math.max(0, Long.parseLong(format.size()));
+        } catch (NumberFormatException _) {
+            log.warn("Unexpected size from ffprobe: {}", format.size());
+            return 0;
+        }
     }
 
     private static double durationSec(ProbeFormat format) {
