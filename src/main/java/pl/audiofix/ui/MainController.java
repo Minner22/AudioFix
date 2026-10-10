@@ -8,6 +8,7 @@ import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static pl.audiofix.AudioFixApp.WINDOW_TITLE;
 
@@ -54,6 +56,8 @@ public class MainController {
 
     @FXML private TextField outputField;
     @FXML private Button changeOutputButton;
+    @FXML private Button applyToAllButton;
+    @FXML private Button outputFolderButton;
 
     @FXML private Button startButton;
     @FXML private Button cancelButton;
@@ -285,6 +289,83 @@ public class MainController {
     }
 
     @FXML
+    private void onApplyToAll() {
+
+        if (shown != null && shown.isEditable()) {
+            applyToAll(shown);
+        }
+    }
+
+    /** Copies the track settings of one file to every other waiting file with the same track layout. */
+    void applyToAll(ConversionJob from) {
+
+        List<ConversionJob> targets = pendingJobs().stream().filter(job -> job != from).toList();
+        if (targets.isEmpty()) {
+            showInfo("Zastosuj do wszystkich", "Brak innych plików oczekujących na konwersję.");
+            return;
+        }
+
+        int applied = 0;
+        List<String> skipped = new ArrayList<>();
+        for (ConversionJob job : targets) {
+            Optional<String> difference = TrackPlans.layoutDifference(from.getPlans(), job.getPlans());
+            if (difference.isPresent()) {
+                skipped.add("• " + job.getInput().getFileName() + ": " + difference.get());
+            } else {
+                TrackPlans.copySettings(from.getPlans(), job.getPlans());
+                applied++;
+            }
+        }
+
+        String result = "Ustawienia ścieżek skopiowano do plików: " + applied;
+        if (skipped.isEmpty()) {
+            showInfo("Zastosuj do wszystkich", result);
+        } else {
+            showWarning("Zastosuj do wszystkich", result + System.lineSeparator()
+                    + "Pominięto (inny układ ścieżek):" + System.lineSeparator()
+                    + String.join(System.lineSeparator(), skipped));
+        }
+    }
+
+    @FXML
+    private void onOutputFolderForAll() {
+
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Folder dla wszystkich plików");
+        if (shown != null) {
+            File current = shown.getOutput().getParent().toFile();
+            if (current.isDirectory()) {
+                chooser.setInitialDirectory(current);
+            }
+        }
+
+        File folder = chooser.showDialog(window());
+        if (folder != null) {
+            moveOutputsTo(folder.toPath());
+        }
+    }
+
+    /** Moves the outputs of all waiting files to the folder, keeping their names where possible. */
+    void moveOutputsTo(Path folder) {
+
+        List<String> renamed = new ArrayList<>();
+        for (ConversionJob job : pendingJobs()) {
+            List<Path> taken = new ArrayList<>(outputsInUse(job));
+            taken.add(job.getInput());   // never overwrite a source film
+            Path moved = OutputPathResolver.inFolder(job.getOutput(), folder, taken);
+            if (!moved.getFileName().equals(job.getOutput().getFileName())) {
+                renamed.add("• " + job.getOutput().getFileName() + " → " + moved.getFileName());
+            }
+            job.setOutput(moved);
+        }
+
+        if (!renamed.isEmpty()) {
+            showInfo("Folder dla wszystkich", "Część nazw była już zajęta w tym folderze:"
+                    + System.lineSeparator() + String.join(System.lineSeparator(), renamed));
+        }
+    }
+
+    @FXML
     private void onRemoveFromQueue() {
 
         ConversionJob job = shown;
@@ -422,6 +503,8 @@ public class MainController {
         removeFromQueueButton.setDisable(shown == null || shown.getStatus() == JobStatus.RUNNING);
         trackTable.setDisable(shown != null && !editable);
         changeOutputButton.setDisable(!editable);
+        applyToAllButton.setDisable(!editable);
+        outputFolderButton.setDisable(pendingJobs().isEmpty());
     }
 
     private void setLoading(boolean value) {

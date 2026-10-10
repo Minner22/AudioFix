@@ -23,7 +23,15 @@
             </VBox>
             <VBox spacing="8">
                 <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
-                <Label text="Ścieżki" styleClass="section-header"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="Ścieżki" styleClass="section-header"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="applyToAllButton" text="Zastosuj do wszystkich" minWidth="-Infinity" onAction="#onApplyToAll">
+                        <tooltip>
+                            <Tooltip text="Kopiuje „Zostaw”, akcję i ścieżki domyślne do pozostałych oczekujących plików z tym samym układem ścieżek."/>
+                        </tooltip>
+                    </Button>
+                </HBox>
                 <TableView fx:id="trackTable" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="keepColumn" text="Zostaw"/>
@@ -41,6 +49,11 @@
                     <Label text="Plik wyjściowy:"/>
                     <TextField fx:id="outputField" HBox.hgrow="ALWAYS"/>
                     <Button fx:id="changeOutputButton" text="Zmień…" minWidth="-Infinity" onAction="#onChangeOutput"/>
+                    <Button fx:id="outputFolderButton" text="Folder dla wszystkich…" minWidth="-Infinity" onAction="#onOutputFolderForAll">
+                        <tooltip>
+                            <Tooltip text="Zapisuje wszystkie oczekujące pliki do wybranego folderu, z zachowaniem ich nazw."/>
+                        </tooltip>
+                    </Button>
                 </HBox>
             </VBox>
         </SplitPane>

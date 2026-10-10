@@ -165,4 +165,37 @@ class OutputPathResolverTest {
         assertEquals(dir.resolve("Film_fixed.mkv"),
                 OutputPathResolver.defaultOutput(dir.resolve("Film.mkv"), List.of(dir.resolve("Inny_fixed.mkv"))));
     }
+
+    // ---------------------------------------------------------------- inFolder (#59)
+
+    @Test
+    void inFolderKeepsFileName() throws IOException {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+
+        assertEquals(target.resolve("Odcinek 1_fixed.mkv"),
+                OutputPathResolver.inFolder(dir.resolve("Odcinek 1_fixed.mkv"), target, List.of()));
+    }
+
+    @Test
+    void inFolderKeepsCustomName() throws IOException {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+
+        assertEquals(target.resolve("Mój wynik.mkv"), OutputPathResolver.inFolder(dir.resolve("Mój wynik.mkv"), target, List.of()));
+    }
+
+    @Test
+    void inFolderSkipsExistingFile() throws IOException {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        Files.createFile(target.resolve("Film_fixed.mkv"));
+
+        assertEquals(target.resolve("Film_fixed (1).mkv"), OutputPathResolver.inFolder(dir.resolve("Film_fixed.mkv"), target, List.of()));
+    }
+
+    @Test
+    void inFolderSkipsNameTakenInQueue() throws IOException {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        List<Path> taken = List.of(target.resolve("Film_fixed.mkv"), target.resolve("Film_fixed (1).mkv"));
+
+        assertEquals(target.resolve("Film_fixed (2).mkv"), OutputPathResolver.inFolder(dir.resolve("Film_fixed.mkv"), target, taken));
+    }
 }

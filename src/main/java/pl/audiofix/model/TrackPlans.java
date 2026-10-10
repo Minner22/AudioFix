@@ -2,6 +2,8 @@ package pl.audiofix.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 
 public final class TrackPlans {
@@ -102,5 +104,50 @@ public final class TrackPlans {
         return plans.stream()
                 .filter(TrackPlan::isMakeDefault)
                 .count();
+    }
+
+    public static Optional<String> layoutDifference(List<TrackPlan> reference, List<TrackPlan> other) {
+
+        if (reference.size() != other.size()) {
+
+            return Optional.of("inna liczba ścieżek: " + other.size() + " zamiast " + reference.size());
+        }
+
+        for (int i = 0; i < reference.size(); i++) {
+            StreamInfo expected = reference.get(i).getStream();
+            StreamInfo actual = other.get(i).getStream();
+            String track = "ścieżka #" + actual.index() + ": ";
+
+            if (expected.type() != actual.type()) {
+                return Optional.of(track + "inny typ ścieżki");
+            }
+            if (!Objects.equals(expected.codec(), actual.codec())) {
+                return Optional.of(track + "kodek " + actual.codec() + " zamiast " + expected.codec());
+            }
+            if (expected.channels() != actual.channels()) {
+                return Optional.of(track + "kanały " + actual.channels() + " zamiast " + expected.channels());
+            }
+            if (!Objects.equals(expected.language(), actual.language())) {
+                return Optional.of(track + "język " + actual.language() + " zamiast " + expected.language());
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public static void copySettings(List<TrackPlan> from, List<TrackPlan> to) {
+
+        layoutDifference(from, to).ifPresent(difference -> {
+            throw new IllegalArgumentException("Different track layout: " + difference);
+        });
+
+        // keep first: changing it re-normalizes defaults through listeners, so defaults are set last
+        for (int i = 0; i < from.size(); i++) {
+            to.get(i).setKeep(from.get(i).isKeep());
+        }
+        for (int i = 0; i < from.size(); i++) {
+            to.get(i).setTargetCodec(from.get(i).getTargetCodec());
+            to.get(i).setMakeDefault(from.get(i).isMakeDefault());
+        }
     }
 }

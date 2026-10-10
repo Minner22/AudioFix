@@ -2,10 +2,13 @@ package pl.audiofix.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TrackPlansTest {
@@ -222,7 +225,123 @@ class TrackPlansTest {
         assertEquals(List.of(), TrackPlans.validate(plans));
     }
 
+    // ---------------------------------------------------------------- layoutDifference (#59)
+
+    @Test
+    void sameLayoutHasNoDifference() {
+        assertEquals(Optional.empty(), TrackPlans.layoutDifference(plans(), plans()));
+    }
+
+    @Test
+    void titlesMayDiffer() {
+        // episodes often have different track titles but the same tracks
+        List<TrackPlan> other = new ArrayList<>(plans());
+        other.set(1, retitled(other.get(1), "Inny tytuł"));
+
+        assertEquals(Optional.empty(), TrackPlans.layoutDifference(plans(), other));
+    }
+
+    @Test
+    void differentTrackCountIsReported() {
+        List<TrackPlan> shorter = plans().subList(0, 4);
+
+        assertEquals(Optional.of("inna liczba ścieżek: 4 zamiast 6"), TrackPlans.layoutDifference(plans(), shorter));
+    }
+
+    @Test
+    void differentCodecIsReportedWithTrackNumber() {
+        List<TrackPlan> other = new ArrayList<>(plans());
+        other.set(2, plan(2, StreamType.AUDIO, "eac3", false));
+
+        assertEquals(Optional.of("ścieżka #2: kodek eac3 zamiast ac3"), TrackPlans.layoutDifference(plans(), other));
+    }
+
+    @Test
+    void differentChannelsAreReported() {
+        List<TrackPlan> other = new ArrayList<>(plans());
+        other.set(3, TrackPlan.defaultsFor(new StreamInfo(3, StreamType.AUDIO, "dts", null, 2, null, "eng", null, false)));
+
+        assertEquals(Optional.of("ścieżka #3: kanały 2 zamiast 6"), TrackPlans.layoutDifference(plans(), other));
+    }
+
+    @Test
+    void differentLanguageIsReported() {
+        List<TrackPlan> other = new ArrayList<>(plans());
+        other.set(4, TrackPlan.defaultsFor(new StreamInfo(4, StreamType.SUBTITLE, "subrip", null, 0, null, "pol", null, false)));
+
+        assertEquals(Optional.of("ścieżka #4: język pol zamiast eng"), TrackPlans.layoutDifference(plans(), other));
+    }
+
+    @Test
+    void differentTypeIsReported() {
+        List<TrackPlan> other = new ArrayList<>(plans());
+        other.set(5, plan(5, StreamType.AUDIO, "subrip", false));
+
+        assertEquals(Optional.of("ścieżka #5: inny typ ścieżki"), TrackPlans.layoutDifference(plans(), other));
+    }
+
+    // ---------------------------------------------------------------- copySettings (#59)
+
+    @Test
+    void copySettingsCopiesKeepCodecAndDefaults() {
+        List<TrackPlan> from = plans();
+        from.get(2).setKeep(false);                          // AC3 removed
+        from.get(3).setTargetCodec(AudioCodec.EAC3);         // DTS -> E-AC3
+        TrackPlans.setDefault(from, from.get(3));            // DTS default audio
+        TrackPlans.setDefault(from, from.get(4));            // first subtitles default
+        List<TrackPlan> to = withNormalizingListeners(plans());
+
+        TrackPlans.copySettings(from, to);
+
+        assertFalse(to.get(2).isKeep());
+        assertEquals(AudioCodec.EAC3, to.get(3).getTargetCodec());
+        assertEquals(List.of(3), defaultIndexes(to, StreamType.AUDIO));
+        assertEquals(List.of(4), defaultIndexes(to, StreamType.SUBTITLE));
+    }
+
+    @Test
+    void removingTrackWhileCopyingDoesNotAddSecondDefault() {
+        // copying track by track (keep + default together) breaks here: after TrueHD's default is cleared,
+        // removing AC3 re-normalizes defaults and makes TrueHD default again, next to the copied DTS
+        List<TrackPlan> from = plans();
+        TrackPlans.setDefault(from, from.get(3));   // DTS
+        from.get(2).setKeep(false);                 // AC3 removed
+        List<TrackPlan> to = withNormalizingListeners(plans());
+
+        TrackPlans.copySettings(from, to);
+
+        assertEquals(List.of(3), defaultIndexes(to, StreamType.AUDIO));
+        assertEquals(List.of(), TrackPlans.validate(to));
+    }
+
+    @Test
+    void copySettingsKeepsRemovedTracksAgainWhenSourceKeepsThem() {
+        List<TrackPlan> to = withNormalizingListeners(plans());
+        to.get(2).setKeep(false);
+
+        TrackPlans.copySettings(plans(), to);
+
+        assertTrue(to.get(2).isKeep());
+    }
+
+    @Test
+    void copySettingsRefusesDifferentLayout() {
+        assertThrows(IllegalArgumentException.class, () -> TrackPlans.copySettings(plans(), plans().subList(0, 3)));
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    /** Like MainController.addMedia: changing keep re-normalizes defaults. */
+    private static List<TrackPlan> withNormalizingListeners(List<TrackPlan> plans) {
+        plans.forEach(plan -> plan.keepProperty().addListener(observable -> TrackPlans.normalizeDefaults(plans)));
+        return plans;
+    }
+
+    private static TrackPlan retitled(TrackPlan plan, String title) {
+        StreamInfo s = plan.getStream();
+        return TrackPlan.defaultsFor(new StreamInfo(s.index(), s.type(), s.codec(), s.profile(), s.channels(),
+                s.channelLayout(), s.language(), title, s.isDefault()));
+    }
 
     /** 0 video, 1 TrueHD (default), 2 AC3, 3 DTS, 4 subtitles pol, 5 subtitles eng. */
     private static List<TrackPlan> plans() {
