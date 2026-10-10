@@ -450,6 +450,27 @@ class QueueViewTest {
         assertTrue(outputFolderButton.isDisable(), "nothing waiting");
     }
 
+    // ---------------------------------------------------------------- drag and drop (#49)
+
+    @Test
+    void droppingOnlyOtherFilesAddsNothingAndExplains() throws Exception {
+        Path notes = Files.writeString(dir.resolve("notatki.txt"), "x");
+
+        boolean added = callOnFxThread(() -> controller.dropFiles(List.of(notes)));
+
+        assertFalse(added, "drop must not be reported as completed");
+        assertTrue(queueList.getItems().isEmpty());
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("notatki.txt")), alertTexts().toString());
+    }
+
+    @Test
+    void droppingFolderWithoutFilmsAddsNothing() throws Exception {
+        Path photos = Files.createDirectory(dir.resolve("Zdjęcia"));
+
+        assertFalse(callOnFxThread(() -> controller.dropFiles(List.of(photos))));
+        assertTrue(queueList.getItems().isEmpty());
+    }
+
     // ---------------------------------------------------------------- helpers
 
     private ConversionJob add(String fileName) throws Exception {
