@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -133,5 +134,35 @@ class OutputPathResolverTest {
     @Test
     void differentFilesAreNotSame() {
         assertFalse(OutputPathResolver.isSameFile(dir.resolve("Film.mkv"), dir.resolve("Film_fixed.mkv")));
+    }
+
+    // ---------------------------------------------------------------- outputs taken by the queue (#13)
+
+    @Test
+    void outputTakenByAnotherQueuedFileIsSkipped() {
+        Path taken = dir.resolve("Film_fixed.mkv");   // not on disk yet - another job will write it
+
+        assertEquals(dir.resolve("Film_fixed (1).mkv"), OutputPathResolver.defaultOutput(dir.resolve("Film.mp4"), List.of(taken)));
+    }
+
+    @Test
+    void takenAndExistingNamesAreBothSkipped() throws IOException {
+        Files.createFile(dir.resolve("Film_fixed.mkv"));
+        Path taken = dir.resolve("Film_fixed (1).mkv");
+
+        assertEquals(dir.resolve("Film_fixed (2).mkv"), OutputPathResolver.defaultOutput(dir.resolve("Film.mkv"), List.of(taken)));
+    }
+
+    @Test
+    void takenNameIsComparedIgnoringCase() {
+        Path taken = dir.resolve("FILM_FIXED.MKV");
+
+        assertEquals(dir.resolve("Film_fixed (1).mkv"), OutputPathResolver.defaultOutput(dir.resolve("Film.mkv"), List.of(taken)));
+    }
+
+    @Test
+    void unrelatedTakenNamesChangeNothing() {
+        assertEquals(dir.resolve("Film_fixed.mkv"),
+                OutputPathResolver.defaultOutput(dir.resolve("Film.mkv"), List.of(dir.resolve("Inny_fixed.mkv"))));
     }
 }

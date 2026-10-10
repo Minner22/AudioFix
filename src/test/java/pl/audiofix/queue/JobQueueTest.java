@@ -1,6 +1,7 @@
 package pl.audiofix.queue;
 
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,8 @@ import java.util.function.BooleanSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static pl.audiofix.ui.FxTestSupport.callOnFxThread;
@@ -305,6 +308,40 @@ class JobQueueTest {
 
         assertFalse(callOnFxThread(queue::isRunning));
         assertEquals(JobStatus.PENDING, job.getStatus());
+    }
+
+    // ---------------------------------------------------------------- for the UI (#13)
+
+    @Test
+    void currentJobIsSetWhileItConverts() throws Exception {
+        ConversionJob slow = job("slow");
+        startWith(slow);
+        waitUntil(() -> slow.getStatus() == JobStatus.RUNNING, "slow job did not start");
+
+        assertSame(slow, callOnFxThread(() -> queue.currentJobProperty().get()));
+
+        onFxThread(queue::cancelCurrent);
+        waitUntilIdle();
+        assertNull(callOnFxThread(() -> queue.currentJobProperty().get()));
+    }
+
+    @Test
+    void statusChangeIsReportedAsListUpdate() throws Exception {
+        // the main window refreshes buttons from list changes - status changes must be visible there too
+        ConversionJob job = job("a");
+        List<ConversionJob> updated = new CopyOnWriteArrayList<>();
+        onFxThread(() -> queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> {
+            while (change.next()) {
+                if (change.wasUpdated()) {
+                    updated.addAll(change.getList().subList(change.getFrom(), change.getTo()));
+                }
+            }
+        }));
+
+        startWith(job);
+        waitUntilIdle();
+
+        assertEquals(List.of(job, job), updated, "RUNNING and DONE");
     }
 
     // ---------------------------------------------------------------- threading

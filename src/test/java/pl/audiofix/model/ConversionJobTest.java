@@ -194,6 +194,25 @@ class ConversionJobTest {
     }
 
     @Test
+    void modeCanBeChangedWhilePending() {
+        ConversionJob job = job();
+
+        job.setMode(ConversionMode.QUICK);
+
+        assertEquals(ConversionMode.QUICK, job.getMode());
+        assertEquals(ConversionMode.QUICK, job.modeProperty().get());
+    }
+
+    @Test
+    void modeCannotBeChangedOnceStarted() {
+        ConversionJob job = job();
+        job.markRunning();
+
+        assertThrows(IllegalStateException.class, () -> job.setMode(ConversionMode.QUICK));
+        assertEquals(ConversionMode.PLANNED, job.getMode());
+    }
+
+    @Test
     void finishedJobIsNotEditable() {
         ConversionJob job = job();
         job.markCancelled();

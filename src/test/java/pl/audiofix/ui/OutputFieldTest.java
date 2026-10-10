@@ -65,7 +65,7 @@ class OutputFieldTest {
     void loadingFileSetsDefaultOutputNextToIt() throws Exception {
         Path input = dir.resolve("Film.mkv");
 
-        onFxThread(() -> controller.showMedia(media(input)));
+        onFxThread(() -> controller.addMedia(media(input)));
 
         assertEquals(dir.resolve("Film_fixed.mkv").toString(), outputField.getText());
         assertFalse(changeOutputButton.isDisable());
@@ -75,15 +75,15 @@ class OutputFieldTest {
     void existingOutputIsNotOverwrittenByDefault() throws Exception {
         Files.createFile(dir.resolve("Film_fixed.mkv"));
 
-        onFxThread(() -> controller.showMedia(media(dir.resolve("Film.mkv"))));
+        onFxThread(() -> controller.addMedia(media(dir.resolve("Film.mkv"))));
 
         assertEquals(dir.resolve("Film_fixed (1).mkv").toString(), outputField.getText());
     }
 
     @Test
     void loadingAnotherFileReplacesOutput() throws Exception {
-        onFxThread(() -> controller.showMedia(media(dir.resolve("Film.mkv"))));
-        onFxThread(() -> controller.showMedia(media(dir.resolve("Serial S01E01.mp4"))));
+        onFxThread(() -> controller.addMedia(media(dir.resolve("Film.mkv"))));
+        onFxThread(() -> controller.addMedia(media(dir.resolve("Serial S01E01.mp4"))));
 
         assertEquals(dir.resolve("Serial S01E01_fixed.mkv").toString(), outputField.getText());
     }

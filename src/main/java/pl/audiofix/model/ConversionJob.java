@@ -19,7 +19,7 @@ public class ConversionJob {
 
     private final MediaInfo mediaInfo;
     private final List<TrackPlan> plans;
-    private final ConversionMode mode;
+    private final ObjectProperty<ConversionMode> mode;
     private final ObjectProperty<Path> output;
     private final ReadOnlyObjectWrapper<JobStatus> status = new ReadOnlyObjectWrapper<>(JobStatus.PENDING);
     private final ReadOnlyDoubleWrapper progress = new ReadOnlyDoubleWrapper();
@@ -35,7 +35,7 @@ public class ConversionJob {
 
         this.mediaInfo = mediaInfo;
         this.plans = List.copyOf(plans);
-        this.mode = mode;
+        this.mode = new  SimpleObjectProperty<>(mode);
         this.output = new SimpleObjectProperty<>(output);
     }
 
@@ -74,9 +74,14 @@ public class ConversionJob {
         return plans;
     }
 
-    public ConversionMode getMode() {
+    public ReadOnlyObjectProperty<ConversionMode> modeProperty() {
 
         return mode;
+    }
+
+    public ConversionMode getMode() {
+
+        return mode.get();
     }
 
     public Path getOutput() {
@@ -151,6 +156,15 @@ public class ConversionJob {
     public void setProgress(double fraction) {
 
         progress.set(Math.clamp(fraction, 0.0, 1.0));
+    }
+
+    public void setMode(ConversionMode value) {
+
+        if (!isEditable()) {
+            throw new IllegalStateException("Job is  " + getStatus() + ", it cannot be changed");
+        }
+
+        mode.set(Objects.requireNonNull(value));
     }
 
     public void appendLog(String line) {

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static pl.audiofix.ui.FxTestSupport.onFxThread;
 
 /**
- * Track table of the main window, filled through MainController.showMedia
+ * Track table of the main window, filled through MainController.addMedia
  * with streams like in the Drive remux (TrueHD, AC3, DTS-HD MA, subtitles, font attachment).
  */
 class TrackTableTest {
@@ -64,7 +64,7 @@ class TrackTableTest {
             root = loader.getRoot();
             table = (TableView<TrackPlan>) root.lookup("#trackTable");
             controller = loader.getController();
-            controller.showMedia(DRIVE);
+            controller.addMedia(DRIVE);
             FxTestSupport.layout(root);
         });
     }
@@ -90,7 +90,7 @@ class TrackTableTest {
                 new StreamInfo(0, StreamType.VIDEO, "h264", null, 0, null, "und", null, true),
                 new StreamInfo(1, StreamType.AUDIO, "aac", "LC", 2, "stereo", "pol", null, true)));
 
-        onFxThread(() -> controller.showMedia(other));
+        onFxThread(() -> controller.addMedia(other));
 
         assertEquals(2, table.getItems().size());
     }
@@ -264,7 +264,7 @@ class TrackTableTest {
                 new StreamInfo(1, StreamType.AUDIO, "dts", null, 6, null, "eng", null, true),
                 new StreamInfo(2, StreamType.AUDIO, "ac3", null, 6, null, "pol", null, true)));
 
-        onFxThread(() -> controller.showMedia(twoDefaults));
+        onFxThread(() -> controller.addMedia(twoDefaults));
 
         assertTrue(plan(1).isMakeDefault());
         assertFalse(plan(2).isMakeDefault());
