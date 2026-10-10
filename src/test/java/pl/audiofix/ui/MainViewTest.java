@@ -52,7 +52,8 @@ class MainViewTest {
     @Test
     void buttonsExist() {
         for (String id : List.of("addFilesButton", "ffmpegSettingsButton", "aboutButton", "removeFromQueueButton",
-                "changeOutputButton", "startButton", "quickConvertButton", "cancelButton")) {
+                "changeOutputButton", "startButton", "quickConvertButton", "cancelButton",
+                "applyToAllButton", "outputFolderButton")) {
             Button button = lookup(id, Button.class);
             assertNotNull(button.getOnAction(), "no onAction handler for " + id);
             assertFalse(button.getText().isBlank(), "no text on " + id);

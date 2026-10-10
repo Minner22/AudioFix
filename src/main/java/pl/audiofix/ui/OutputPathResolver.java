@@ -48,6 +48,20 @@ public final class OutputPathResolver {
                 .equalsIgnoreCase(b.toAbsolutePath().normalize().toString());
     }
 
+    public static Path inFolder(Path output, Path folder, Collection<Path> taken) {
+
+        String name = output.getFileName().toString();
+        String base = withoutExtension(name);
+        String extension = name.substring(base.length());
+
+        Path candidate = folder.resolve(name);
+        for (int n = 1; Files.exists(candidate) || isTaken(candidate, taken); n++) {
+            candidate = folder.resolve(base + " (" + n + ")" + extension);
+        }
+
+        return candidate;
+    }
+
     private static String withoutExtension(String name) {
 
         int dot = name.lastIndexOf('.');

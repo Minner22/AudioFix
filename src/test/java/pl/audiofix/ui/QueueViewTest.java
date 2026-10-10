@@ -15,13 +15,16 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.ConversionJob;
+import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.JobStatus;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +53,8 @@ class QueueViewTest {
     private Button changeOutputButton;
     private Button removeButton;
     private Button startButton;
+    private Button applyToAllButton;
+    private Button outputFolderButton;
 
     @BeforeAll
     static void startJavaFx() {
@@ -70,6 +75,8 @@ class QueueViewTest {
             changeOutputButton = (Button) root.lookup("#changeOutputButton");
             removeButton = (Button) root.lookup("#removeFromQueueButton");
             startButton = (Button) root.lookup("#startButton");
+            applyToAllButton = (Button) root.lookup("#applyToAllButton");
+            outputFolderButton = (Button) root.lookup("#outputFolderButton");
         });
     }
 
@@ -288,6 +295,159 @@ class QueueViewTest {
         onFxThread(startButton::fire);
 
         assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Dodaj pliki")), alertTexts().toString());
+    }
+
+    // ---------------------------------------------------------------- apply to all (#59)
+
+    @Test
+    void trackSettingsAreCopiedToFilesWithSameLayout() throws Exception {
+        ConversionJob first = add("Odcinek 1.mkv");
+        ConversionJob second = add("Odcinek 2.mkv");
+        ConversionJob third = add("Odcinek 3.mkv");
+        onFxThread(() -> {
+            first.getPlans().get(2).setKeep(false);                      // AC3 removed
+            first.getPlans().get(1).setTargetCodec(AudioCodec.EAC3);     // DTS -> E-AC3
+        });
+
+        onFxThread(() -> controller.applyToAll(first));
+
+        for (ConversionJob job : List.of(second, third)) {
+            assertFalse(job.getPlans().get(2).isKeep(), job.toString());
+            assertEquals(AudioCodec.EAC3, job.getPlans().get(1).getTargetCodec(), job.toString());
+        }
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("plików: 2")), alertTexts().toString());
+    }
+
+    @Test
+    void fileWithOtherLayoutIsSkippedWithReason() throws Exception {
+        ConversionJob first = add("Odcinek 1.mkv");
+        ConversionJob other = callOnFxThread(() -> controller.addMedia(new MediaInfo(dir.resolve("Film.mkv"), 10, List.of(
+                new StreamInfo(0, StreamType.VIDEO, "h264", null, 0, null, "und", null, true),
+                new StreamInfo(1, StreamType.AUDIO, "dts", null, 6, null, "eng", null, true),
+                new StreamInfo(2, StreamType.AUDIO, "eac3", null, 6, null, "pol", null, false)))));
+        onFxThread(() -> first.getPlans().get(2).setKeep(false));
+
+        onFxThread(() -> controller.applyToAll(first));
+
+        assertTrue(other.getPlans().get(2).isKeep(), "other layout must stay untouched");
+        String alerts = String.join("\n", alertTexts());
+        assertTrue(alerts.contains("Film.mkv: ścieżka #2: kodek eac3 zamiast ac3"), alerts);
+    }
+
+    @Test
+    void applyToAllDoesNotTouchStartedFilesModeOrOutput() throws Exception {
+        ConversionJob first = add("Odcinek 1.mkv");
+        ConversionJob done = add("Odcinek 2.mkv");
+        ConversionJob quick = add("Odcinek 3.mkv");
+        Path quickOutput = quick.getOutput();
+        onFxThread(() -> {
+            done.markRunning();
+            done.markDone();
+            quick.setMode(ConversionMode.QUICK);
+            first.getPlans().get(2).setKeep(false);
+        });
+
+        onFxThread(() -> controller.applyToAll(first));
+
+        assertTrue(done.getPlans().get(2).isKeep(), "finished file must not change");
+        assertFalse(quick.getPlans().get(2).isKeep());
+        assertEquals(ConversionMode.QUICK, quick.getMode());
+        assertEquals(quickOutput, quick.getOutput());
+    }
+
+    @Test
+    void applyToAllWithoutOtherFilesSaysSo() throws Exception {
+        ConversionJob only = add("Film.mkv");
+
+        onFxThread(() -> controller.applyToAll(only));
+
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Brak innych plików")), alertTexts().toString());
+    }
+
+    @Test
+    void applyToAllIsOnlyForWaitingFile() throws Exception {
+        ConversionJob job = add("Film.mkv");
+        assertFalse(applyToAllButton.isDisable());
+
+        onFxThread(job::markRunning);
+
+        assertTrue(applyToAllButton.isDisable());
+    }
+
+    // ---------------------------------------------------------------- output folder for all (#59)
+
+    @Test
+    void outputsOfWaitingFilesMoveToFolderWithTheirNames() throws Exception {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        ConversionJob first = add("Odcinek 1.mkv");
+        ConversionJob second = add("Odcinek 2.mkv");
+        onFxThread(() -> controller.changeOutput(second, dir.resolve("Mój wynik.mkv")));
+
+        onFxThread(() -> controller.moveOutputsTo(target));
+
+        assertEquals(target.resolve("Odcinek 1_fixed.mkv"), first.getOutput());
+        assertEquals(target.resolve("Mój wynik.mkv"), second.getOutput());
+        assertEquals(target.resolve("Mój wynik.mkv").toString(), outputField.getText(), "shown file's field follows");
+    }
+
+    @Test
+    void sameNamesFromDifferentFoldersDoNotCollide() throws Exception {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        Path otherDir = Files.createDirectory(dir.resolve("Inne"));
+        ConversionJob first = add("Film.mkv");
+        ConversionJob second = callOnFxThread(() -> controller.addMedia(media(otherDir.resolve("Film.mkv"))));
+
+        onFxThread(() -> controller.moveOutputsTo(target));
+
+        assertEquals(target.resolve("Film_fixed.mkv"), first.getOutput());
+        assertEquals(target.resolve("Film_fixed (1).mkv"), second.getOutput());
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Film_fixed (1).mkv")), alertTexts().toString());
+    }
+
+    @Test
+    void existingFileInFolderIsNotOverwritten() throws Exception {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        Files.createFile(target.resolve("Film_fixed.mkv"));
+        ConversionJob job = add("Film.mkv");
+
+        onFxThread(() -> controller.moveOutputsTo(target));
+
+        assertEquals(target.resolve("Film_fixed (1).mkv"), job.getOutput());
+    }
+
+    @Test
+    void startedFilesKeepTheirOutput() throws Exception {
+        Path target = Files.createDirectory(dir.resolve("Seriale"));
+        ConversionJob running = add("Odcinek 1.mkv");
+        ConversionJob done = add("Odcinek 2.mkv");
+        ConversionJob waiting = add("Odcinek 3.mkv");
+        Path runningOutput = running.getOutput();
+        Path doneOutput = done.getOutput();
+        onFxThread(() -> {
+            done.markRunning();
+            done.markDone();
+            running.markRunning();
+        });
+
+        onFxThread(() -> controller.moveOutputsTo(target));
+
+        assertEquals(runningOutput, running.getOutput());
+        assertEquals(doneOutput, done.getOutput());
+        assertEquals(target.resolve("Odcinek 3_fixed.mkv"), waiting.getOutput());
+    }
+
+    @Test
+    void folderForAllNeedsWaitingFiles() throws Exception {
+        assertTrue(outputFolderButton.isDisable(), "empty queue");
+
+        ConversionJob job = add("Film.mkv");
+        assertFalse(outputFolderButton.isDisable());
+
+        onFxThread(() -> {
+            job.markRunning();
+            job.markDone();
+        });
+        assertTrue(outputFolderButton.isDisable(), "nothing waiting");
     }
 
     // ---------------------------------------------------------------- helpers
