@@ -1,6 +1,7 @@
 package pl.audiofix.ui.theme;
 
 import javafx.application.Platform;
+import javafx.css.PseudoClass;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -16,9 +17,11 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +29,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -42,6 +47,12 @@ class ThemeTest {
     private static final Color CONVERT = Color.web("#ea580c");
     private static final Color DANGER = Color.web("#b91c1c");
 
+    private static final Color DARK_CANVAS = Color.web("#141418");
+    private static final Color DARK_FIELD = Color.web("#25252d");
+    private static final Color DARK_BORDER = Color.web("#383a48");
+    private static final Color DARK_TEXT = Color.web("#f1f5f9");
+    private static final Color DARK_CONVERT_BG = Color.web("#2b170c");
+
     @BeforeAll
     static void startJavaFx() {
         CompletableFuture<Void> started = new CompletableFuture<>();
@@ -52,6 +63,14 @@ class ThemeTest {
         }
         Platform.setImplicitExit(false);
         started.orTimeout(10, TimeUnit.SECONDS).join();
+    }
+
+    @AfterEach
+    void backToLight() throws Exception {
+        onFxThread(() -> {
+            Theme.setCurrent(Theme.LIGHT);
+            return null;
+        });
     }
 
     // ---------------------------------------------------------------- stylesheets
@@ -66,8 +85,91 @@ class ThemeTest {
     }
 
     @Test
-    void lightIsCurrentUntilDarkModeExists() {
+    void darkValuesComeBeforeTheSameRules() {
+        List<String> sheets = Theme.DARK.stylesheets();
+
+        assertEquals(2, sheets.size());
+        assertTrue(sheets.get(0).endsWith("/pl/audiofix/ui/theme/dark.css"), sheets.get(0));
+        assertEquals(Theme.LIGHT.stylesheets().get(1), sheets.get(1), "one base.css for both themes");
+    }
+
+    @Test
+    void lightIsCurrentBeforeAnyChoice() {
         assertEquals(Theme.LIGHT, Theme.current());
+    }
+
+    @Test
+    void applyUsesCurrentTheme() throws Exception {
+        List<String> sheets = onFxThread(() -> {
+            Theme.setCurrent(Theme.DARK);
+            Scene scene = new Scene(new VBox());
+            Theme.apply(scene);
+            return List.copyOf(scene.getStylesheets());
+        });
+
+        assertEquals(Theme.DARK.stylesheets(), sheets);
+    }
+
+    // ---------------------------------------------------------------- switching while windows are open
+
+    @Test
+    void openSceneFollowsThemeChanges() throws Exception {
+        Scene scene = onFxThread(() -> {
+            Scene created = new Scene(new VBox());
+            Theme.apply(created);
+            Theme.setCurrent(Theme.DARK);
+            return created;
+        });
+        assertEquals(Theme.DARK.stylesheets(), onFxThread(() -> List.copyOf(scene.getStylesheets())));
+
+        onFxThread(() -> {
+            Theme.setCurrent(Theme.LIGHT);
+            return null;
+        });
+        List<String> sheets = onFxThread(() -> List.copyOf(scene.getStylesheets()));
+        assertEquals(Theme.LIGHT.stylesheets(), sheets);
+        assertFalse(sheets.stream().anyMatch(sheet -> sheet.endsWith("dark.css")), "dark values must go");
+    }
+
+    @Test
+    void openAlertFollowsThemeChanges() throws Exception {
+        List<String> sheets = onFxThread(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            Theme.apply(alert);
+            Theme.setCurrent(Theme.DARK);
+            return List.copyOf(alert.getDialogPane().getStylesheets());
+        });
+
+        assertEquals(Theme.DARK.stylesheets(), sheets);
+    }
+
+    @Test
+    void applyingTwiceKeepsOneSetOfStylesheets() throws Exception {
+        List<String> sheets = onFxThread(() -> {
+            Scene scene = new Scene(new VBox());
+            Theme.apply(scene);
+            Theme.apply(scene);
+            Theme.setCurrent(Theme.DARK);
+            return List.copyOf(scene.getStylesheets());
+        });
+
+        assertEquals(Theme.DARK.stylesheets(), sheets);
+    }
+
+    @Test
+    void closedWindowIsNotKeptByTheTheme() throws Exception {
+        // every alert gets a listener on the current theme; a strong one would keep each closed alert in memory
+        WeakReference<Scene> scene = onFxThread(() -> {
+            Scene created = new Scene(new VBox(new Label("Konwersja zakończona")));
+            Theme.apply(created);
+            return new WeakReference<>(created);
+        });
+
+        for (int i = 0; i < 50 && scene.get() != null; i++) {
+            System.gc();
+            Thread.sleep(20);
+        }
+        assertNull(scene.get());
     }
 
     @Test
@@ -188,10 +290,78 @@ class ThemeTest {
         assertEquals(Insets.EMPTY, insets);
     }
 
+    // ---------------------------------------------------------------- resolved values: dark
+
+    @Test
+    void darkWindowBackgroundIsDeepCanvas() throws Exception {
+        assertEquals(DARK_CANVAS, fill(styled(Theme.DARK), 0));
+    }
+
+    @Test
+    void darkButtonIsRaisedFieldWithHairlineBorder() throws Exception {
+        Button button = styled(Theme.DARK).getChildren().stream()
+                .filter(n -> n instanceof Button b && b.getStyleClass().size() == 1)
+                .map(Button.class::cast).findFirst().orElseThrow();
+
+        assertEquals(DARK_BORDER, fill(button, 0));
+        assertEquals(DARK_FIELD, fill(button, 1));
+        assertEquals(DARK_TEXT, button.getTextFill());
+    }
+
+    @Test
+    void darkTextIsLight() throws Exception {
+        Label label = (Label) styled(Theme.DARK).lookup(".label");
+
+        assertEquals(DARK_TEXT, label.getTextFill());
+    }
+
+    @Test
+    void darkKeepsAccentForPrimaryButton() throws Exception {
+        Button primary = (Button) styled(Theme.DARK).lookup(".button-primary");
+
+        assertEquals(ACCENT, fill(primary, 1));
+        assertEquals(Color.WHITE, primary.getTextFill());
+    }
+
+    @Test
+    void darkThemeUsesBundledFonts() throws Exception {
+        onFxThread(ThemeFonts::load);
+        VBox root = styled(Theme.DARK);
+
+        assertEquals("Geist", ((Label) root.lookup(".label")).getFont().getFamily());
+        assertEquals("JetBrains Mono", ((TextArea) root.lookup(".console")).getFont().getFamily());
+    }
+
+    @Test
+    void darkTableRowsUseFieldColor() throws Exception {
+        assertEquals(DARK_FIELD, fill(darkRow(false), 1), "rows are lighter than the panel around the table");
+    }
+
+    @Test
+    void darkRowsToConvertStandOut() throws Exception {
+        assertEquals(DARK_CONVERT_BG, fill(darkRow(true), 1), "warm background under the gridline layer");
+    }
+
     // ---------------------------------------------------------------- helpers
 
-    /** A small window with the controls the theme styles, after CSS has been applied. */
     private static VBox styled() throws Exception {
+        return styled(Theme.LIGHT);
+    }
+
+    /** A track table row styled by the dark theme, with or without :needs-conversion. */
+    private static Region darkRow(boolean needsConversion) throws Exception {
+        return onFxThread(() -> {
+            Region row = new Region();
+            row.getStyleClass().add("table-row-cell");
+            row.pseudoClassStateChanged(PseudoClass.getPseudoClass("needs-conversion"), needsConversion);
+            new Scene(new VBox(row)).getStylesheets().setAll(Theme.DARK.stylesheets());
+            row.applyCss();
+            return row;
+        });
+    }
+
+    /** A small window with the controls the given theme styles, after CSS has been applied. */
+    private static VBox styled(Theme theme) throws Exception {
         return onFxThread(() -> {
             Label header = new Label("Ścieżki");
             header.getStyleClass().add("section-header");
@@ -204,7 +374,7 @@ class ThemeTest {
 
             VBox root = new VBox(new Label("Plik wyjściowy:"), header, new Button("Zmień…"),
                     primary, warning, danger, console, progress);
-            Theme.apply(new Scene(root, 400, 400));
+            new Scene(root, 400, 400).getStylesheets().setAll(theme.stylesheets());
             root.applyCss();
             root.layout();
             return root;

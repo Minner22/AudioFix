@@ -6,6 +6,7 @@
 .root {
     -af-canvas: #f8fafc;
     -af-surface: #ffffff;
+    -af-field: #ffffff;
     -af-surface-muted: #f1f5f9;
     -af-hover: #f8fafc;
 
@@ -24,6 +25,7 @@
     -af-accent-hover: #0369a1;
     -af-on-accent: #ffffff;
     -af-selection: #e0f2fe;
+    -af-selection-text: #0369a1;
     -af-track: #e2e8f0;
 
     -af-convert: #ea580c;

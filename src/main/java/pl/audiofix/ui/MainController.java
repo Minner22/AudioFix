@@ -28,11 +28,14 @@ import pl.audiofix.model.TrackPlan;
 import pl.audiofix.model.TrackPlans;
 import pl.audiofix.queue.JobQueue;
 import pl.audiofix.ui.theme.Theme;
+import pl.audiofix.ui.theme.ThemeChoice;
+import pl.audiofix.ui.theme.ThemeManager;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static pl.audiofix.AudioFixApp.WINDOW_TITLE;
@@ -47,6 +50,9 @@ public class MainController {
 
     @FXML private Button addFilesButton;
     @FXML private Button ffmpegSettingsButton;
+    @FXML private RadioMenuItem systemThemeItem;
+    @FXML private RadioMenuItem lightThemeItem;
+    @FXML private RadioMenuItem darkThemeItem;
 
     @FXML private Label queueTitleLabel;
     @FXML private Label queueRemainingLabel;
@@ -108,6 +114,17 @@ public class MainController {
     public void setHostServices(HostServices hostServices) {
 
         this.hostServices = hostServices;
+    }
+
+    /** Ties the "Motyw" menu to the saved choice; before this call the menu items do nothing. */
+    public void setThemeManager(ThemeManager themes) {
+
+        Map<ThemeChoice, RadioMenuItem> items = Map.of(
+                ThemeChoice.SYSTEM, systemThemeItem,
+                ThemeChoice.LIGHT, lightThemeItem,
+                ThemeChoice.DARK, darkThemeItem);
+        items.get(themes.getChoice()).setSelected(true);
+        items.forEach((choice, item) -> item.setOnAction(event -> themes.setChoice(choice)));
     }
 
     public void shutdown() {
