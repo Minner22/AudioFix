@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MediaInfoTest {
@@ -59,6 +60,19 @@ class MediaInfoTest {
         var info = new MediaInfo(Path.of("film.mkv"), 7200.0, List.of(VIDEO), 34_789_235_712L);
 
         assertEquals(34_789_235_712L, info.sizeBytes());
+    }
+
+    @Test
+    void containerNameIsKept() {
+        var info = new MediaInfo(Path.of("film.mkv"), 7200.0, List.of(VIDEO), 1024, "Matroska / WebM");
+
+        assertEquals("Matroska / WebM", info.formatName());
+    }
+
+    @Test
+    void containerNameIsNullWhenNotGiven() {
+        assertNull(mediaInfo(List.of(VIDEO)).formatName());
+        assertNull(new MediaInfo(Path.of("film.mkv"), 7200.0, List.of(VIDEO), 1024).formatName());
     }
 
     @Test

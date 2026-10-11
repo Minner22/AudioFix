@@ -42,6 +42,7 @@
     -fx-font-family: "Segoe UI";
 }
 
-.console {
+.console,
+.path-field {
     -fx-font-family: "Consolas";
 }

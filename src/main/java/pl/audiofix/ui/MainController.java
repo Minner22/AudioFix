@@ -48,10 +48,17 @@ public class MainController {
     @FXML private Button addFilesButton;
     @FXML private Button ffmpegSettingsButton;
 
+    @FXML private Label queueTitleLabel;
+    @FXML private Label queueRemainingLabel;
     @FXML private ListView<ConversionJob> queueList;
     @FXML private Button removeFromQueueButton;
 
+    @FXML private Label tracksTitleLabel;
+    @FXML private Label tracksFileLabel;
+    @FXML private Label tracksInfoLabel;
+    @FXML private Label trackCountLabel;
     @FXML private TableView<TrackPlan> trackTable;
+
     @FXML private TableColumn<TrackPlan, Boolean> keepColumn;
     @FXML private TableColumn<TrackPlan, Integer> indexColumn;
     @FXML private TableColumn<TrackPlan, String> typeColumn;
@@ -116,7 +123,10 @@ public class MainController {
         queueList.setPlaceholder(new Label("Przeciągnij tu filmy albo użyj [Dodaj pliki…]"));
         queueList.getSelectionModel().selectedItemProperty().addListener((observable, previous, job) -> showJob(job));
 
-        queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> updateControls());
+        queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> {
+            updateControls();
+            updateQueueHeader();
+        });
         queue.runningProperty().addListener((observable, wasRunning, running) -> {
             updateControls();
             if (!running) {
@@ -144,6 +154,8 @@ public class MainController {
         outputField.setEditable(false);
         configureDragAndDrop();
         updateControls();
+        updateQueueHeader();
+        updateTracksHeader();
     }
 
     @FXML
@@ -316,6 +328,8 @@ public class MainController {
             job.getLog().addListener(logFollower);
             job.statusProperty().addListener(shownStatusListener);
         }
+
+        updateTracksHeader();
         updateControls();
     }
 
@@ -577,6 +591,32 @@ public class MainController {
         changeOutputButton.setDisable(!editable);
         applyToAllButton.setDisable(!editable);
         outputFolderButton.setDisable(pendingJobs().isEmpty());
+    }
+
+    private void updateQueueHeader() {
+
+        List<ConversionJob> jobs = queue.getJobs();
+        long remaining = jobs.stream().filter(job -> !job.getStatus().isFinished()).count();
+        queueTitleLabel.setText("Kolejka plików (" + jobs.size() + ")");
+        queueRemainingLabel.setText("Pozostało: " + remaining);
+    }
+
+    private void updateTracksHeader() {
+
+        if (shown == null) {
+            tracksTitleLabel.setText("Ścieżki");
+            tracksFileLabel.setText("");
+            tracksFileLabel.setTooltip(null);
+            tracksInfoLabel.setText("");
+            trackCountLabel.setText("");
+            return;
+        }
+
+        tracksTitleLabel.setText("Ścieżki:");
+        tracksFileLabel.setText(shown.getInput().getFileName().toString());
+        tracksFileLabel.setTooltip(new Tooltip(shown.getInput().toString()));
+        tracksInfoLabel.setText(TextFormats.fileInfo(shown.getMediaInfo()));
+        trackCountLabel.setText(TextFormats.count(trackTable.getItems().size(), "ścieżka", "ścieżki", "ścieżek"));
     }
 
     private void setLoading(boolean value) {

@@ -28,8 +28,6 @@ import java.util.stream.Stream;
 final class QueueCell extends ListCell<ConversionJob> {
 
     static final List<String> STATUS_CLASSES = Arrays.stream(JobStatus.values()).map(QueueCell::statusClass).toList();
-    private static final Locale POLISH = Locale.forLanguageTag("pl-PL");
-    private static final List<String> UNITS = List.of("B", "KB", "MB", "GB", "TB");
 
     private final Label name = new Label();
     private final Label details = new Label();
@@ -88,27 +86,11 @@ final class QueueCell extends ListCell<ConversionJob> {
 
     static String detailsText(MediaInfo media) {
 
-        String size = media.sizeBytes() > 0 ? sizeText(media.sizeBytes()) : "";
+        String size = media.sizeBytes() > 0 ? TextFormats.fileSize(media.sizeBytes()) : "";
 
         return Stream.of(size, containerText(media.path()))
                 .filter(part -> !part.isEmpty())
                 .collect(Collectors.joining(" • "));
-    }
-
-    static String sizeText(long bytes) {
-
-        if (bytes < 1024) {
-            return bytes + " B";
-        }
-
-        double value = bytes;
-        int unit = 0;
-        while (value >= 1024 && unit < UNITS.size() - 1) {
-            value /= 1024;
-            unit++;
-        }
-
-        return String.format(POLISH, "%.1f %s", value, UNITS.get(unit));
     }
 
     static String containerText(Path file) {

@@ -1,0 +1,95 @@
+package pl.audiofix.ui;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import pl.audiofix.model.MediaInfo;
+
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class TextFormatsTest {
+
+    // ---------------------------------------------------------------- file size
+
+    @ParameterizedTest(name = "{0} B -> \"{1}\"")
+    @CsvSource(delimiter = '|', textBlock = """
+            0              | 0 B
+            512            | 512 B
+            1023           | 1023 B
+            1024           | 1,0 KB
+            1536           | 1,5 KB
+            5242880        | 5,0 MB
+            1503238553     | 1,4 GB
+            34789235712    | 32,4 GB
+            2199023255552  | 2,0 TB
+            """)
+    void sizeLikeWindowsExplorer(long bytes, String expected) {
+        assertEquals(expected, TextFormats.fileSize(bytes));
+    }
+
+    // ---------------------------------------------------------------- Polish plural
+
+    @ParameterizedTest(name = "{0} -> \"{1}\"")
+    @CsvSource(delimiter = '|', textBlock = """
+            0    | 0 ścieżek
+            1    | 1 ścieżka
+            2    | 2 ścieżki
+            4    | 4 ścieżki
+            5    | 5 ścieżek
+            9    | 9 ścieżek
+            11   | 11 ścieżek
+            12   | 12 ścieżek
+            14   | 14 ścieżek
+            21   | 21 ścieżek
+            22   | 22 ścieżki
+            24   | 24 ścieżki
+            25   | 25 ścieżek
+            101  | 101 ścieżek
+            112  | 112 ścieżek
+            122  | 122 ścieżki
+            """)
+    void countUsesPolishNounForms(long n, String expected) {
+        assertEquals(expected, TextFormats.count(n, "ścieżka", "ścieżki", "ścieżek"));
+    }
+
+    // ---------------------------------------------------------------- container
+
+    @ParameterizedTest(name = "\"{0}\" -> \"{1}\"")
+    @CsvSource(delimiter = '|', textBlock = """
+            Matroska / WebM                     | Matroska
+            QuickTime / MOV                     | QuickTime
+            MPEG-TS (MPEG-2 Transport Stream)   | MPEG-TS
+            AVI (Audio Video Interleaved)       | AVI
+            raw H.264 video                     | raw H.264 video
+            """)
+    void containerNameIsShortPartOfFfprobeName(String formatLongName, String expected) {
+        assertEquals(expected, TextFormats.containerName(formatLongName));
+    }
+
+    @Test
+    void unknownContainerIsEmpty() {
+        assertEquals("", TextFormats.containerName(null));
+        assertEquals("", TextFormats.containerName(""));
+    }
+
+    // ---------------------------------------------------------------- tracks header
+
+    @Test
+    void fileInfoHasSizeAndContainer() {
+        assertEquals("(32,4 GB, Matroska)", TextFormats.fileInfo(media(34_789_235_712L, "Matroska / WebM")));
+    }
+
+    @Test
+    void fileInfoShowsOnlyWhatIsKnown() {
+        assertEquals("(32,4 GB)", TextFormats.fileInfo(media(34_789_235_712L, null)));
+        assertEquals("(Matroska)", TextFormats.fileInfo(media(0, "Matroska / WebM")));
+        assertEquals("", TextFormats.fileInfo(media(0, null)), "no empty brackets");
+    }
+
+    private static MediaInfo media(long size, String formatName) {
+        return new MediaInfo(Path.of("Drive.mkv"), 60, List.of(), size, formatName);
+    }
+}

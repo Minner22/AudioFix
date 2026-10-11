@@ -354,6 +354,110 @@
     -fx-padding: 0 2 0 3;
 }
 
+/* ------------------------------------------------------------------ window layout (#44) */
+
+/* the split pane holds the two panels as cards with a 4px gap */
+.workspace {
+    -fx-padding: 4;
+}
+
+.workspace > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 0 2 0 2;
+}
+
+.panel {
+    -fx-background-color: -af-border, -af-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 3, 2;
+    -fx-padding: 1;
+}
+
+/* same height in both panels, with or without a button in the header */
+.panel-header {
+    -fx-background-color: -af-border, -af-surface-muted;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0 10 1 10;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
+}
+
+.panel-header .button {
+    -fx-padding: 2 8 2 8;
+}
+
+.panel-footer {
+    -fx-background-color: -af-border, -af-surface-muted;
+    -fx-background-insets: 0, 1 0 0 0;
+    -fx-padding: 7 10 6 10;
+}
+
+/* lists and tables inside a card: the card draws the border */
+.panel > .list-view,
+.panel > .table-view {
+    -fx-background-color: -af-surface;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+.panel > .table-view .column-header-background {
+    -fx-background-radius: 0;
+}
+
+.panel-note {
+    -fx-font-size: 11px;
+    -fx-text-fill: -af-text-muted;
+}
+
+.file-name {
+    -fx-text-fill: -af-accent;
+    -fx-font-weight: bold;
+}
+
+.field-label {
+    -fx-text-fill: -af-heading;
+    -fx-font-weight: bold;
+}
+
+/* output path and [Zmień…] share one edge */
+.joined-left {
+    -fx-background-radius: 3 0 0 3, 2 0 0 2;
+}
+
+.joined-right {
+    -fx-background-insets: 0, 1 1 1 0;
+    -fx-background-radius: 0 3 3 0, 0 2 2 0;
+}
+
+.action-bar {
+    -fx-background-color: -af-border, -af-canvas;
+    -fx-background-insets: 0, 1 0 0 0;
+    -fx-padding: 8;
+}
+
+/* ------------------------------------------------------------------ icons (#44) */
+
+.icon {
+    -fx-fill: -af-text-muted;
+}
+
+.icon-add {
+    -fx-fill: -af-accent;
+}
+
+.button-primary .icon {
+    -fx-fill: -af-on-accent;
+}
+
+.button-warning .icon {
+    -fx-fill: -af-convert;
+}
+
+.button-danger .icon {
+    -fx-fill: -af-danger;
+}
+
 /* ------------------------------------------------------------------ scroll bars: thin, flat, square */
 
 .scroll-bar {
