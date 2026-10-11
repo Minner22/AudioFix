@@ -8,6 +8,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
@@ -15,12 +17,15 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.text.Text;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import pl.audiofix.AudioFixApp;
 import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.ui.theme.Theme;
+import pl.audiofix.ui.theme.ThemeFonts;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -204,6 +209,48 @@ class MainLayoutTest {
                 .map(Node::getId)
                 .toList());
         assertEquals(List.of(), outside);
+    }
+
+    // ---------------------------------------------------------------- track table columns (#45)
+
+    @ParameterizedTest
+    @EnumSource(Theme.class)
+    void smallestWindowFitsTrackTableWithoutCuttingHeaders(Theme theme) throws Exception {
+        onFxThread(() -> {
+            ThemeFonts.load();   // the dark theme's Geist is wider than Segoe UI
+            Theme.setCurrent(theme);
+        });
+        try {
+            load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
+            add(LONG_NAME);
+            TableView<?> table = lookup("trackTable", TableView.class);
+
+            double columns = callOnFxThread(() -> table.getColumns().stream().mapToDouble(TableColumn::getWidth).sum());
+            assertTrue(columns <= table.getWidth(), "columns " + columns + " wider than the table " + table.getWidth());
+
+            List<String> cut = callOnFxThread(() -> table.lookupAll(".column-header .label").stream()
+                    .map(Label.class::cast)
+                    .filter(header -> !shownText(header).equals(header.getText()))
+                    .map(Label::getText)
+                    .toList());
+            assertEquals(List.of(), cut, "column headers shortened in " + theme);
+        }
+        finally {
+            onFxThread(() -> Theme.setCurrent(Theme.LIGHT));
+        }
+    }
+
+    @Test
+    void widerWindowGivesSpaceOnlyToCodecAndTitle() throws Exception {
+        load(1400, 800);
+        add(LONG_NAME);
+        TableView<?> table = lookup("trackTable", TableView.class);
+
+        List<String> grown = callOnFxThread(() -> table.getColumns().stream()
+                .filter(column -> column.getWidth() > column.getPrefWidth() + 0.5)
+                .map(TableColumn::getId)
+                .toList());
+        assertEquals(List.of("codecColumn", "titleColumn"), grown);
     }
 
     // ---------------------------------------------------------------- helpers

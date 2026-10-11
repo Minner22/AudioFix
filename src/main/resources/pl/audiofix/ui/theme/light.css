@@ -31,12 +31,19 @@
     -af-convert: #ea580c;
     -af-convert-bg: #fff7ed;
     -af-convert-border: #fdba74;
+    -af-convert-hover: #ffedd5;
+    -af-convert-line: #fed7aa;
+    -af-convert-check: #0284c7;
     -af-copy: #15803d;
     -af-copy-bg: #f0fdf4;
     -af-copy-border: #bbf7d0;
     -af-danger: #b91c1c;
     -af-danger-bg: #fef2f2;
     -af-danger-border: #fca5a5;
+
+    -af-type-video: #2563eb;
+    -af-type-audio: #0d9488;
+    -af-type-subtitle: #8b5cf6;
 
     -af-tooltip-bg: #0f172a;
     -af-tooltip-text: #f8fafc;
@@ -45,6 +52,8 @@
 }
 
 .console,
-.path-field {
+.path-field,
+.track-index,
+.codec-name {
     -fx-font-family: "Consolas";
 }

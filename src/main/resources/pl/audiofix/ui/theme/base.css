@@ -305,15 +305,11 @@
     -fx-background: -af-field;
     -fx-background-color: -af-gridline, -fx-background;
     -fx-background-insets: 0, 0 0 1 0;
-    -fx-cell-size: 28px;
+    -fx-cell-size: 34px;   /* two lines in "Kodek" */
 }
 
 .table-row-cell:filled:hover {
     -fx-background: -af-hover;
-}
-
-.table-row-cell:filled:selected {
-    -fx-background: -af-selection;
 }
 
 .table-row-cell > .table-cell {
@@ -327,12 +323,120 @@
     -fx-text-fill: -af-selection-text;
 }
 
+/* track table (#45): orange line and left edge as background layers, so the cells never move */
 .table-row-cell:needs-conversion {
     -fx-background: -af-convert-bg;
+    -fx-background-color: -af-convert-line, -af-convert, -fx-background;
+    -fx-background-insets: 0, 0 0 1 0, 0 0 1 3;
+}
+
+.table-row-cell:needs-conversion:hover {
+    -fx-background: -af-convert-hover;
+}
+
+.table-row-cell:removed {
+    -fx-background: -af-surface-muted;
 }
 
 .table-row-cell:removed > .table-cell {
     -fx-opacity: 0.45;
+}
+
+/* "Zostaw" stays bright: it is the way to bring the track back */
+.table-row-cell:removed > .keep-cell {
+    -fx-opacity: 1;
+}
+
+/* after the row states, so the selection wins; a converted track stays visible by its orange codec */
+.table-row-cell:filled:selected {
+    -fx-background: -af-selection;
+    -fx-background-color: -af-gridline, -af-accent, -fx-background;
+    -fx-background-insets: 0, 0 0 1 0, 0 0 1 3;
+}
+
+.table-row-cell > .table-cell:missing {
+    -fx-text-fill: -af-text-muted;
+    -fx-font-style: italic;
+}
+
+.table-row-cell > .track-index {
+    -fx-alignment: center;
+    -fx-text-fill: -af-text-muted;
+    -fx-font-size: 11px;
+}
+
+.table-row-cell > .track-type {
+    -fx-font-weight: bold;
+}
+
+.table-row-cell > .type-video {
+    -fx-text-fill: -af-type-video;
+}
+
+.table-row-cell > .type-audio {
+    -fx-text-fill: -af-type-audio;
+}
+
+.table-row-cell > .type-subtitle {
+    -fx-text-fill: -af-type-subtitle;
+}
+
+.codec-name {
+    -fx-font-size: 11px;
+}
+
+.codec-description {
+    -fx-font-size: 10px;
+    -fx-text-fill: -af-text-muted;
+}
+
+.table-row-cell:needs-conversion > .track-index,
+.table-row-cell:needs-conversion .codec-name,
+.table-row-cell:needs-conversion .codec-description {
+    -fx-text-fill: -af-convert;
+}
+
+.table-row-cell:needs-conversion > .track-channels {
+    -fx-font-weight: bold;
+}
+
+.table-row-cell:needs-conversion .check-box:selected > .box {
+    -fx-background-color: -af-convert-check, -af-convert-check;
+}
+
+/* language badge: ours (pol) warm, other languages blue, unknown and removed grey */
+.language-badge {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 2, 1;
+    -fx-padding: 0 4 0 4;
+}
+
+.language-local {
+    -fx-background-color: -af-danger-border, -af-danger-bg;
+    -fx-text-fill: -af-danger;
+}
+
+.language-other {
+    -fx-background-color: -af-selection, -af-selection;
+    -fx-text-fill: -af-selection-text;
+}
+
+.language-unknown,
+.table-row-cell:removed .language-badge {
+    -fx-background-color: -af-border, -af-surface-muted;
+    -fx-text-fill: -af-text-muted;
+}
+
+/* action of a converted track */
+.combo-box.highlighted {
+    -fx-background-color: -af-convert, -af-field;
+}
+
+.combo-box.highlighted > .list-cell {
+    -fx-text-fill: -af-convert;
+    -fx-font-weight: bold;
 }
 
 /* ------------------------------------------------------------------ badges (codec chips, #45) */

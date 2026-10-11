@@ -24,6 +24,7 @@ import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.JobStatus;
 import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
+import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
 import pl.audiofix.model.TrackPlans;
 import pl.audiofix.queue.JobQueue;
@@ -67,9 +68,9 @@ public class MainController {
 
     @FXML private TableColumn<TrackPlan, Boolean> keepColumn;
     @FXML private TableColumn<TrackPlan, Integer> indexColumn;
-    @FXML private TableColumn<TrackPlan, String> typeColumn;
-    @FXML private TableColumn<TrackPlan, String> codecColumn;
-    @FXML private TableColumn<TrackPlan, Integer> channelsColumn;
+    @FXML private TableColumn<TrackPlan, StreamType> typeColumn;
+    @FXML private TableColumn<TrackPlan, StreamInfo> codecColumn;
+    @FXML private TableColumn<TrackPlan, String> channelsColumn;
     @FXML private TableColumn<TrackPlan, String> languageColumn;
     @FXML private TableColumn<TrackPlan, String> titleColumn;
     @FXML private TableColumn<TrackPlan, AudioCodec> actionColumn;
@@ -159,12 +160,12 @@ public class MainController {
         trackTable.setPlaceholder(new Label("Dodaj plik, aby zobaczyć jego ścieżki"));
         TrackTableConfigurer.configureTable(trackTable);
         TrackTableConfigurer.configureKeep(keepColumn);
-        TrackTableConfigurer.configureReadOnly(indexColumn, StreamInfo::index);
-        TrackTableConfigurer.configureReadOnly(typeColumn, s -> TrackTableConfigurer.typeLabel(s.type()));
-        TrackTableConfigurer.configureReadOnly(codecColumn, StreamInfo::codecLabel);
-        TrackTableConfigurer.configureReadOnly(channelsColumn, s -> s.isAudio() ? s.channels() : null);
-        TrackTableConfigurer.configureReadOnly(languageColumn, StreamInfo::language);
-        TrackTableConfigurer.configureReadOnly(titleColumn, StreamInfo::title);
+        TrackTableConfigurer.configureIndex(indexColumn);
+        TrackTableConfigurer.configureType(typeColumn);
+        TrackTableConfigurer.configureCodec(codecColumn);
+        TrackTableConfigurer.configureChannels(channelsColumn);
+        TrackTableConfigurer.configureLanguage(languageColumn);
+        TrackTableConfigurer.configureTitle(titleColumn);
         TrackTableConfigurer.configureAction(actionColumn);
         TrackTableConfigurer.configureDefault(defaultColumn);
 

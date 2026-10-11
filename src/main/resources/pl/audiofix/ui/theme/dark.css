@@ -32,12 +32,19 @@
     -af-convert: #fb923c;
     -af-convert-bg: #2b170c;
     -af-convert-border: #7c2d12;
+    -af-convert-hover: #351c0e;
+    -af-convert-line: #522714;
+    -af-convert-check: #ea580c;
     -af-copy: #34d399;
     -af-copy-bg: #064e3b;
     -af-copy-border: #065f46;
     -af-danger: #f87171;
     -af-danger-bg: #3b1a1d;
     -af-danger-border: #991b1b;
+
+    -af-type-video: #38bdf8;
+    -af-type-audio: #2dd4bf;
+    -af-type-subtitle: #a78bfa;
 
     -af-tooltip-bg: #383a48;
     -af-tooltip-text: #f1f5f9;
@@ -46,6 +53,8 @@
 }
 
 .console,
-.path-field {
+.path-field,
+.track-index,
+.codec-name {
     -fx-font-family: "JetBrains Mono";
 }

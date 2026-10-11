@@ -51,6 +51,47 @@ class TrackPlanTest {
     }
 
     @Test
+    void trackIsConvertedWhenActionReencodes() {
+        TrackPlan dts = TrackPlan.defaultsFor(stream(StreamType.AUDIO, "dts", "DTS-HD MA", true));
+
+        assertTrue(dts.isConverted(), "DTS -> PCM");
+    }
+
+    @Test
+    void copiedTrackIsNotConverted() {
+        TrackPlan ac3 = TrackPlan.defaultsFor(stream(StreamType.AUDIO, "ac3", null, false));
+
+        assertFalse(ac3.isConverted());
+    }
+
+    @Test
+    void convertedFollowsChosenAction() {
+        TrackPlan ac3 = TrackPlan.defaultsFor(stream(StreamType.AUDIO, "ac3", null, false));
+        TrackPlan dts = TrackPlan.defaultsFor(stream(StreamType.AUDIO, "dts", null, false));
+
+        ac3.setTargetCodec(AudioCodec.EAC3);
+        dts.setTargetCodec(AudioCodec.COPY);
+
+        assertTrue(ac3.isConverted(), "chosen re-encoding counts, not the source codec");
+        assertFalse(dts.isConverted());
+    }
+
+    @Test
+    void removedTrackIsNotConverted() {
+        TrackPlan dts = TrackPlan.defaultsFor(stream(StreamType.AUDIO, "dts", null, false));
+
+        dts.setKeep(false);
+
+        assertFalse(dts.isConverted());
+    }
+
+    @Test
+    void nonAudioIsNeverConverted() {
+        assertFalse(TrackPlan.defaultsFor(stream(StreamType.SUBTITLE, "subrip", null, false)).isConverted());
+        assertFalse(TrackPlan.defaultsFor(stream(StreamType.VIDEO, "hevc", null, true)).isConverted());
+    }
+
+    @Test
     void everyTrackIsKeptByDefault() {
         assertTrue(TrackPlan.defaultsFor(stream(StreamType.AUDIO, "dts", null, false)).isKeep());
         assertTrue(TrackPlan.defaultsFor(stream(StreamType.SUBTITLE, "subrip", null, false)).isKeep());

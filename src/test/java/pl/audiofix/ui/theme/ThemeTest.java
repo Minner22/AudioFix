@@ -339,7 +339,12 @@ class ThemeTest {
 
     @Test
     void darkRowsToConvertStandOut() throws Exception {
-        assertEquals(DARK_CONVERT_BG, fill(darkRow(true), 1), "warm background under the gridline layer");
+        Region row = darkRow(true);
+
+        assertEquals(Color.web("#522714"), fill(row, 0), "orange line under the row");
+        assertEquals(Color.web("#fb923c"), fill(row, 1), "orange left edge");
+        assertEquals(3, row.getBackground().getFills().get(2).getInsets().getLeft(), "the edge is 3px wide");
+        assertEquals(DARK_CONVERT_BG, fill(row, 2), "warm background over the edge layer");
     }
 
     // ---------------------------------------------------------------- helpers

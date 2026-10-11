@@ -67,6 +67,12 @@ public class TrackPlan {
         return stream;
     }
 
+    /** True when the track stays and its chosen action re-encodes it (not Kopiuj). */
+    public boolean isConverted() {
+
+        return isKeep() && getTargetCodec() != null && getTargetCodec() != AudioCodec.COPY;
+    }
+
     public static TrackPlan defaultsFor(StreamInfo stream) {
 
         TrackPlan plan = new TrackPlan(stream);
