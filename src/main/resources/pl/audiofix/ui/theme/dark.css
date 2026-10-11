@@ -1,0 +1,51 @@
+/*
+ * AudioFix - dark theme "Flat Precision Dark" (docs/design/stitch/flat_precision_dark.md).
+ * Only values: -af-* colors used by base.css and font families (JavaFX CSS cannot hold a font in a variable).
+ * Geist and JetBrains Mono are bundled and loaded by ThemeFonts.
+ */
+
+.root {
+    -af-canvas: #141418;
+    -af-surface: #1e1e24;
+    -af-field: #25252d;
+    -af-surface-muted: #191923;
+    -af-hover: #2a2b36;
+
+    -af-border: #383a48;
+    -af-border-hover: #4e5063;
+    -af-border-strong: #6b7280;
+    -af-gridline: #2e303c;
+
+    -af-text: #f1f5f9;
+    -af-text-muted: #94a3b8;
+    -af-heading: #cbd5e1;
+    -af-header-text: #94a3b8;
+    -af-prompt: #6b7280;
+
+    -af-accent: #0284c7;
+    -af-accent-hover: #0369a1;
+    -af-on-accent: #ffffff;
+    -af-selection: #1e293b;
+    -af-selection-text: #38bdf8;
+    -af-track: #334155;
+
+    -af-convert: #fb923c;
+    -af-convert-bg: #2b170c;
+    -af-convert-border: #7c2d12;
+    -af-copy: #34d399;
+    -af-copy-bg: #064e3b;
+    -af-copy-border: #065f46;
+    -af-danger: #f87171;
+    -af-danger-bg: #3b1a1d;
+    -af-danger-border: #991b1b;
+
+    -af-tooltip-bg: #383a48;
+    -af-tooltip-text: #f1f5f9;
+
+    -fx-font-family: "Geist";
+}
+
+.console,
+.path-field {
+    -fx-font-family: "JetBrains Mono";
+}

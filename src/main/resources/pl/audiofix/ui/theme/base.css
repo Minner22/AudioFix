@@ -1,6 +1,6 @@
 /*
  * AudioFix - flat style rules shared by all themes.
- * Colors come only from -af-* variables defined in the theme file (light.css, later dark.css).
+ * Colors come only from -af-* variables defined in the theme file (light.css, dark.css).
  * No gradients, no shadows: depth only through surface color and 1px borders.
  */
 
@@ -57,8 +57,9 @@
 /* ------------------------------------------------------------------ buttons */
 
 .button,
-.toggle-button {
-    -fx-background-color: -af-border, -af-surface;
+.toggle-button,
+.menu-button {
+    -fx-background-color: -af-border, -af-field;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 3, 2;
     -fx-text-fill: -af-text;
@@ -66,19 +67,40 @@
 }
 
 .button:hover,
-.toggle-button:hover {
+.toggle-button:hover,
+.menu-button:hover {
     -fx-background-color: -af-border-hover, -af-hover;
 }
 
 .button:focused,
-.toggle-button:focused {
-    -fx-background-color: -af-accent, -af-surface;
+.toggle-button:focused,
+.menu-button:focused {
+    -fx-background-color: -af-accent, -af-field;
 }
 
 .button:armed,
 .toggle-button:armed,
-.toggle-button:selected {
+.toggle-button:selected,
+.menu-button:showing {
     -fx-background-color: -af-border-strong, -af-surface-muted;
+}
+
+/* MenuButton pads its label and arrow itself, so the outer padding goes to them */
+.menu-button {
+    -fx-padding: 0;
+}
+
+.menu-button > .label {
+    -fx-padding: 5 4 5 12;
+}
+
+.menu-button > .arrow-button {
+    -fx-padding: 0 12 0 4;
+}
+
+.menu-button > .arrow-button > .arrow {
+    -fx-background-color: -af-text-muted;
+    -fx-background-insets: 0;
 }
 
 .button-primary {
@@ -119,7 +141,7 @@
 /* ------------------------------------------------------------------ text inputs */
 
 .text-input {
-    -fx-background-color: -af-border, -af-surface;
+    -fx-background-color: -af-border, -af-field;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 3, 2;
     -fx-text-fill: -af-text;
@@ -133,7 +155,7 @@
 }
 
 .text-input:focused {
-    -fx-background-color: -af-accent, -af-surface;
+    -fx-background-color: -af-accent, -af-field;
 }
 
 .text-area {
@@ -141,7 +163,7 @@
 }
 
 .text-area .content {
-    -fx-background-color: -af-surface;
+    -fx-background-color: -af-field;
     -fx-background-radius: 2;
     -fx-padding: 4 8 4 8;
 }
@@ -149,7 +171,7 @@
 /* ------------------------------------------------------------------ combo box */
 
 .combo-box-base {
-    -fx-background-color: -af-border, -af-surface;
+    -fx-background-color: -af-border, -af-field;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 3, 2;
     -fx-padding: 0;
@@ -161,7 +183,7 @@
 
 .combo-box-base:focused,
 .combo-box-base:showing {
-    -fx-background-color: -af-accent, -af-surface;
+    -fx-background-color: -af-accent, -af-field;
 }
 
 .combo-box > .list-cell {
@@ -189,7 +211,7 @@
 
 .check-box > .box,
 .radio-button > .radio {
-    -fx-background-color: -af-border-hover, -af-surface;
+    -fx-background-color: -af-border-hover, -af-field;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 2, 1;
 }
@@ -200,12 +222,12 @@
 
 .check-box:hover > .box,
 .radio-button:hover > .radio {
-    -fx-background-color: -af-border-strong, -af-surface;
+    -fx-background-color: -af-border-strong, -af-field;
 }
 
 .check-box:focused > .box,
 .radio-button:focused > .radio {
-    -fx-background-color: -af-accent, -af-surface;
+    -fx-background-color: -af-accent, -af-field;
 }
 
 .check-box:selected > .box {
@@ -218,7 +240,7 @@
 }
 
 .radio-button:selected > .radio {
-    -fx-background-color: -af-accent, -af-surface;
+    -fx-background-color: -af-accent, -af-field;
 }
 
 .radio-button:selected > .radio > .dot {
@@ -247,13 +269,13 @@
 
 .list-cell:filled:selected {
     -fx-background-color: -af-selection;
-    -fx-text-fill: -af-accent-hover;
+    -fx-text-fill: -af-selection-text;
 }
 
 /* ------------------------------------------------------------------ tables */
 
 .table-view {
-    -fx-background-color: -af-border, -af-surface;
+    -fx-background-color: -af-border, -af-field;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 4, 3;
     -fx-padding: 1;
@@ -280,7 +302,7 @@
 }
 
 .table-row-cell {
-    -fx-background: -af-surface;
+    -fx-background: -af-field;
     -fx-background-color: -af-gridline, -fx-background;
     -fx-background-insets: 0, 0 0 1 0;
     -fx-cell-size: 28px;
@@ -302,7 +324,7 @@
 }
 
 .table-row-cell:filled:selected > .table-cell {
-    -fx-text-fill: -af-accent-hover;
+    -fx-text-fill: -af-selection-text;
 }
 
 .table-row-cell:needs-conversion {
@@ -399,6 +421,10 @@
     -fx-background-insets: 0;
     -fx-background-radius: 0;
     -fx-padding: 0;
+}
+
+.panel > .table-view {
+    -fx-background-color: -af-field;
 }
 
 .panel > .table-view .column-header-background {

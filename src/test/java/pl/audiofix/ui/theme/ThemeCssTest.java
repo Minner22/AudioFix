@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,11 +122,58 @@ class ThemeCssTest {
         assertTrue(light.contains("\"Consolas\""), "console font of Fluent Desktop Precision");
     }
 
+    @Test
+    void darkPaletteFollowsDesign() throws IOException {
+        Map<String, String> dark = definitions(css(Theme.DARK.fileName()));
+
+        assertEquals("#141418", dark.get("-af-canvas"), "window");
+        assertEquals("#1e1e24", dark.get("-af-surface"), "panels");
+        assertEquals("#25252d", dark.get("-af-field"), "table and fields");
+        assertEquals("#383a48", dark.get("-af-border"));
+        assertEquals("#2e303c", dark.get("-af-gridline"), "separators");
+        assertEquals("#f1f5f9", dark.get("-af-text"));
+        assertEquals("#94a3b8", dark.get("-af-text-muted"));
+        assertEquals("#0284c7", dark.get("-af-accent"));
+        assertEquals("#38bdf8", dark.get("-af-selection-text"));
+        assertEquals("#fb923c", dark.get("-af-convert"), "codec text of a track to convert");
+        assertEquals("#2b170c", dark.get("-af-convert-bg"), "row of a track to convert");
+        assertEquals("#34d399", dark.get("-af-copy"));
+    }
+
+    @Test
+    void darkThemeUsesBundledFonts() throws IOException {
+        String dark = css(Theme.DARK.fileName());
+
+        assertTrue(dark.contains("\"Geist\""), "UI font of Flat Precision Dark");
+        assertTrue(dark.contains("\"JetBrains Mono\""), "console font of Flat Precision Dark");
+    }
+
+    @Test
+    void lightKeepsItsLookWithNewVariables() throws IOException {
+        // fields and selected text got their own variables for the dark theme; the light theme looks as before
+        Map<String, String> light = definitions(css(Theme.LIGHT.fileName()));
+
+        assertEquals(light.get("-af-surface"), light.get("-af-field"));
+        assertEquals(light.get("-af-accent-hover"), light.get("-af-selection-text"));
+    }
+
+    @Test
+    void tableRowStatesAreStyledForEveryTheme() throws IOException {
+        // :needs-conversion and :removed live in base.css, so the dark theme gets them through its variables
+        String base = css(Theme.BASE);
+
+        assertTrue(base.contains(".table-row-cell:needs-conversion"));
+        assertTrue(base.contains(".table-row-cell:removed"));
+    }
+
     // ---------------------------------------------------------------- syntax
 
     @Test
     void stylesheetsParseWithoutErrors() {
-        List<String> files = List.of(Theme.BASE, Theme.LIGHT.fileName());
+        List<String> files = new ArrayList<>(List.of(Theme.BASE));
+        for (Theme theme : Theme.values()) {
+            files.add(theme.fileName());
+        }
 
         for (String file : files) {
             CssParser.errorsProperty().clear();

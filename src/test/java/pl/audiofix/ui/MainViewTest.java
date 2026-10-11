@@ -7,8 +7,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -158,15 +161,48 @@ class MainViewTest {
     // ---------------------------------------------------------------- layout (#44)
 
     @Test
-    void toolbarHasFileActionsLeftAndAboutRight() {
+    void toolbarHasFileActionsLeftAndThemeAndAboutRight() {
         HBox toolBar = lookup("toolBar", HBox.class);
         List<Node> items = toolBar.getChildren();
 
-        assertEquals(4, items.size(), items.toString());
+        assertEquals(5, items.size(), items.toString());
         assertEquals("addFilesButton", items.get(0).getId());
         assertEquals("ffmpegSettingsButton", items.get(1).getId());
         assertEquals(Priority.ALWAYS, HBox.getHgrow(items.get(2)), "spacer pushes the rest to the right");
-        assertEquals("aboutButton", items.get(3).getId());
+        assertEquals("themeButton", items.get(3).getId());
+        assertEquals("aboutButton", items.get(4).getId());
+    }
+
+    // ---------------------------------------------------------------- theme menu (#35)
+
+    @Test
+    void themeMenuOffersSystemLightAndDark() {
+        MenuButton menu = lookup("themeButton", MenuButton.class);
+        List<MenuItem> items = menu.getItems();
+
+        assertEquals("Motyw", menu.getText());
+        assertEquals(List.of("systemThemeItem", "lightThemeItem", "darkThemeItem"), items.stream().map(MenuItem::getId).toList());
+        assertEquals(List.of("Systemowy", "Jasny", "Ciemny"), items.stream().map(MenuItem::getText).toList());
+    }
+
+    @Test
+    void themeChoicesExcludeEachOther() {
+        List<MenuItem> items = lookup("themeButton", MenuButton.class).getItems();
+
+        RadioMenuItem first = assertInstanceOf(RadioMenuItem.class, items.getFirst());
+        assertNotNull(first.getToggleGroup(), "radio items without a group can all be checked at once");
+        for (MenuItem item : items) {
+            assertEquals(first.getToggleGroup(), assertInstanceOf(RadioMenuItem.class, item).getToggleGroup(), item.getId());
+        }
+    }
+
+    @Test
+    void themeMenuHasIconAndFullText() {
+        MenuButton menu = lookup("themeButton", MenuButton.class);
+
+        Icon icon = assertInstanceOf(Icon.class, menu.getGraphic(), "no icon on the theme menu");
+        assertEquals(Icon.Glyph.THEME, icon.getGlyph());
+        assertEquals(Region.USE_PREF_SIZE, menu.getMinWidth(), "minWidth=\"-Infinity\" missing");
     }
 
     @Test

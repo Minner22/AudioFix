@@ -15,6 +15,17 @@
                 <graphic><Icon glyph="SETTINGS"/></graphic>
             </Button>
             <Region HBox.hgrow="ALWAYS"/>
+            <MenuButton fx:id="themeButton" text="Motyw" minWidth="-Infinity">
+                <graphic><Icon glyph="THEME"/></graphic>
+                <fx:define>
+                    <ToggleGroup fx:id="themeGroup"/>
+                </fx:define>
+                <items>
+                    <RadioMenuItem fx:id="systemThemeItem" text="Systemowy" toggleGroup="$themeGroup"/>
+                    <RadioMenuItem fx:id="lightThemeItem" text="Jasny" toggleGroup="$themeGroup"/>
+                    <RadioMenuItem fx:id="darkThemeItem" text="Ciemny" toggleGroup="$themeGroup"/>
+                </items>
+            </MenuButton>
             <Button fx:id="aboutButton" text="O programie" minWidth="-Infinity" onAction="#onAbout">
                 <graphic><Icon glyph="ABOUT"/></graphic>
             </Button>
