@@ -5,6 +5,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -24,9 +26,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static pl.audiofix.ui.FxTestSupport.callOnFxThread;
 import static pl.audiofix.ui.FxTestSupport.onFxThread;
 
 /**
@@ -37,6 +41,7 @@ class TrackTableTest {
 
     private static final PseudoClass NEEDS_CONVERSION = PseudoClass.getPseudoClass("needs-conversion");
     private static final PseudoClass REMOVED = PseudoClass.getPseudoClass("removed");
+    private static final PseudoClass MISSING = PseudoClass.getPseudoClass("missing");
 
     // 0 video, 1 TrueHD (default), 2 AC3, 3 DTS-HD MA, 4 subtitles, 5 font attachment
     private static final MediaInfo DRIVE = new MediaInfo(Path.of("D:\\Filmy\\Drive.mkv"), 6000, List.of(
@@ -86,54 +91,178 @@ class TrackTableTest {
 
     @Test
     void showingAnotherFileReplacesRows() throws Exception {
-        MediaInfo other = new MediaInfo(Path.of("other.mkv"), 10, List.of(
-                new StreamInfo(0, StreamType.VIDEO, "h264", null, 0, null, "und", null, true),
-                new StreamInfo(1, StreamType.AUDIO, "aac", "LC", 2, "stereo", "pol", null, true)));
-
-        onFxThread(() -> controller.addMedia(other));
+        onFxThread(() -> controller.addMedia(other()));
 
         assertEquals(2, table.getItems().size());
     }
 
-    // ---------------------------------------------------------------- columns
+    // ---------------------------------------------------------------- read-only cells
 
     @Test
-    void readOnlyColumnsShowStreamData() {
-        int trueHd = 1;
-        assertEquals(1, cellData("indexColumn", trueHd));
-        assertEquals("Audio", cellData("typeColumn", trueHd));
-        assertEquals("truehd (Dolby TrueHD + Dolby Atmos)", cellData("codecColumn", trueHd));
-        assertEquals(8, cellData("channelsColumn", trueHd));
-        assertEquals("eng", cellData("languageColumn", trueHd));
-        assertEquals("TrueHD Atmos 7.1", cellData("titleColumn", trueHd));
+    void indexIsSmallMutedNumber() {
+        TableCell<?, ?> index = cell("indexColumn", 3);
+
+        assertEquals("3", index.getText());
+        assertTrue(index.getStyleClass().contains("track-index"));
     }
 
     @Test
-    void typeColumnUsesPolishLabels() {
-        assertEquals("Wideo", cellData("typeColumn", 0));
-        assertEquals("Audio", cellData("typeColumn", 2));
-        assertEquals("Napisy", cellData("typeColumn", 4));
+    void typeShowsPolishLabelInItsColor() {
+        assertType(0, "Wideo", "type-video");
+        assertType(2, "Audio", "type-audio");
+        assertType(4, "Napisy", "type-subtitle");
     }
 
     @Test
-    void channelsAreEmptyForNonAudio() {
-        assertNull(cellData("channelsColumn", 0));
-        assertNull(cellData("channelsColumn", 4));
+    void reusedTypeCellKeepsOnlyOneColor() throws Exception {
+        // while scrolling the table moves a cell to another row; an old class left behind would mix the colors
+        TableCell<?, ?> cell = reusedCell("typeColumn", 1, 4);   // TrueHD row, then the subtitles row
+
+        assertEquals("Napisy", cell.getText());
+        assertEquals(List.of("type-subtitle"), cell.getStyleClass().stream().filter(c -> c.startsWith("type-")).toList());
     }
 
     @Test
-    void missingTitleIsEmpty() {
-        assertNull(cellData("titleColumn", 4));
+    void reusedLanguageBadgeKeepsOnlyOneColor() throws Exception {
+        Label badge = (Label) reusedCell("languageColumn", 1, 4).getGraphic();   // eng, then pol
+
+        assertEquals("pol", badge.getText());
+        assertEquals(List.of("language-local"),
+                badge.getStyleClass().stream().filter(c -> c.startsWith("language-") && !c.equals("language-badge")).toList());
     }
 
     @Test
-    void actionColumnShowsTargetCodecOnlyForAudio() {
-        assertEquals(AudioCodec.PCM_S24LE, cellData("actionColumn", 1));
-        assertNull(cellData("actionColumn", 0));
-        assertNull(cellData("actionColumn", 4));
+    void codecHasNameAndDescriptionInTwoLines() {
+        List<Label> lines = codecLines(1);
+
+        assertEquals("truehd", lines.get(0).getText());
+        assertEquals("Dolby TrueHD + Atmos 7.1", lines.get(1).getText());
+        assertTrue(lines.get(0).getStyleClass().contains("codec-name"));
+        assertTrue(lines.get(1).getStyleClass().contains("codec-description"));
+        assertTrue(lines.get(1).isVisible());
     }
 
-    // ---------------------------------------------------------------- editing
+    @Test
+    void videoCodecIsOneLineWithProfile() {
+        List<Label> lines = codecLines(0);
+
+        assertEquals("hevc (Main 10)", lines.get(0).getText());
+        assertFalse(lines.get(1).isVisible(), "no second line for video");
+        assertFalse(lines.get(1).isManaged(), "a hidden line must not take space");
+    }
+
+    @Test
+    void channelsAreShownAsCount() {
+        assertEquals("8 ch", cell("channelsColumn", 1).getText());
+        assertEquals("6 ch", cell("channelsColumn", 3).getText());
+    }
+
+    @Test
+    void channelsAreDashForVideoAndSubtitles() {
+        for (int index : List.of(0, 4)) {
+            TableCell<?, ?> channels = cell("channelsColumn", index);
+            assertEquals("-", channels.getText());
+            assertTrue(channels.getPseudoClassStates().contains(MISSING), "muted dash for stream " + index);
+        }
+    }
+
+    @Test
+    void languageIsBadgeColoredByLanguage() {
+        assertBadge(1, "eng", "language-other");
+        assertBadge(4, "pol", "language-local");
+        assertBadge(0, "und", "language-unknown");
+    }
+
+    @Test
+    void titleHasFullTextInTooltip() {
+        TableCell<?, ?> title = cell("titleColumn", 1);
+
+        assertEquals("TrueHD Atmos 7.1", title.getText());
+        assertNotNull(title.getTooltip(), "long titles are cut, the tooltip shows them whole");
+        assertEquals("TrueHD Atmos 7.1", title.getTooltip().getText());
+    }
+
+    @Test
+    void missingTitleIsMutedDashWithoutTooltip() {
+        TableCell<?, ?> title = cell("titleColumn", 4);
+
+        assertEquals("-", title.getText());
+        assertTrue(title.getPseudoClassStates().contains(MISSING));
+        assertNull(title.getTooltip());
+    }
+
+    // ---------------------------------------------------------------- action column
+
+    @Test
+    void audioActionListIsAlwaysVisible() {
+        ComboBox<?> action = actionIn(1);
+
+        assertEquals(AudioCodec.PCM_S24LE, action.getValue());
+        assertFalse(action.isDisabled());
+        assertEquals(List.of(AudioCodec.values()), List.copyOf(action.getItems()));
+    }
+
+    @Test
+    void videoAndSubtitlesShowLockedCopy() {
+        ComboBox<?> video = actionIn(0);
+        ComboBox<?> subtitles = actionIn(4);
+
+        assertEquals("Kopiuj (passthrough)", video.getValue());
+        assertEquals("Kopiuj", subtitles.getValue());
+        assertTrue(video.isDisabled());
+        assertTrue(subtitles.isDisabled());
+    }
+
+    @Test
+    void lockedCopyIsOnlyShownNotPlanned() {
+        // ffmpeg copies video and subtitles anyway; their plan keeps no target codec
+        assertNull(plan(0).getTargetCodec());
+        assertNull(plan(4).getTargetCodec());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void choosingActionChangesPlan() throws Exception {
+        onFxThread(() -> ((ComboBox<AudioCodec>) actionIn(2)).setValue(AudioCodec.EAC3));
+
+        assertEquals(AudioCodec.EAC3, plan(2).getTargetCodec());
+    }
+
+    @Test
+    void changedPlanIsVisibleInActionList() throws Exception {
+        onFxThread(() -> {
+            plan(2).setTargetCodec(AudioCodec.AC3);
+            FxTestSupport.layout(root);
+        });
+
+        assertEquals(AudioCodec.AC3, actionIn(2).getValue());
+    }
+
+    @Test
+    void convertingActionIsOrange() throws Exception {
+        assertTrue(actionIn(1).getStyleClass().contains("highlighted"), "TrueHD -> PCM");
+        assertFalse(actionIn(2).getStyleClass().contains("highlighted"), "AC3 copied");
+
+        onFxThread(() -> {
+            plan(2).setTargetCodec(AudioCodec.EAC3);
+            plan(1).setTargetCodec(AudioCodec.COPY);
+            FxTestSupport.layout(root);
+        });
+
+        assertTrue(actionIn(2).getStyleClass().contains("highlighted"));
+        assertFalse(actionIn(1).getStyleClass().contains("highlighted"));
+    }
+
+    @Test
+    void removedTrackActionIsLocked() throws Exception {
+        onFxThread(() -> plan(2).setKeep(false));
+        assertTrue(actionIn(2).isDisabled());
+
+        onFxThread(() -> plan(2).setKeep(true));
+        assertFalse(actionIn(2).isDisabled());
+    }
+
+    // ---------------------------------------------------------------- keep column
 
     @Test
     void tableIsEditable() {
@@ -163,26 +292,18 @@ class TrackTableTest {
     }
 
     @Test
-    void actionCanBeChangedOnlyForAudio() {
-        assertFalse(cell("actionColumn", 0).isEditable());
-        assertTrue(cell("actionColumn", 1).isEditable());
-        assertFalse(cell("actionColumn", 4).isEditable());
-    }
-
-    @Test
-    void changedPlanIsVisibleInActionColumn() throws Exception {
-        onFxThread(() -> plan(2).setTargetCodec(AudioCodec.EAC3));
-
-        assertEquals(AudioCodec.EAC3, cellData("actionColumn", 2));
+    void keepCellStaysBrightInRemovedRow() {
+        assertTrue(cell("keepColumn", 2).getStyleClass().contains("keep-cell"));
     }
 
     // ---------------------------------------------------------------- default column (#9)
 
     @Test
-    void defaultRadioIsShownForAudioAndSubtitlesOnly() {
-        assertNull(cell("defaultColumn", 0).getGraphic(), "video has no default radio");
-        assertNotNull(radioIn(cell("defaultColumn", 1)));
-        assertNotNull(radioIn(cell("defaultColumn", 4)));
+    void videoDefaultRadioIsLockedAndChecked() {
+        RadioButton video = radioIn(cell("defaultColumn", 0));
+
+        assertTrue(video.isSelected(), "video is always the default one");
+        assertTrue(video.isDisabled());
     }
 
     @Test
@@ -245,16 +366,12 @@ class TrackTableTest {
     }
 
     @Test
-    void choosingRemovedTrackAsDefaultKeepsItAgain() throws Exception {
-        onFxThread(() -> {
-            plan(3).setKeep(false);
-            FxTestSupport.layout(root);
-            radioIn(cell("defaultColumn", 3)).fire();
-            FxTestSupport.layout(root);
-        });
+    void removedTrackCannotBeChosenAsDefault() throws Exception {
+        onFxThread(() -> plan(3).setKeep(false));
+        assertTrue(radioIn(cell("defaultColumn", 3)).isDisabled());
 
-        assertTrue(plan(3).isKeep());
-        assertTrue(plan(3).isMakeDefault());
+        onFxThread(() -> plan(3).setKeep(true));
+        assertFalse(radioIn(cell("defaultColumn", 3)).isDisabled());
     }
 
     @Test
@@ -273,12 +390,35 @@ class TrackTableTest {
     // ---------------------------------------------------------------- row styles
 
     @Test
-    void tracksThatNeedConversionAreHighlighted() {
+    void tracksThatAreConvertedAreHighlighted() {
         assertTrue(hasPseudoClass(1, NEEDS_CONVERSION), "TrueHD");
         assertTrue(hasPseudoClass(3, NEEDS_CONVERSION), "DTS");
         assertFalse(hasPseudoClass(0, NEEDS_CONVERSION), "video");
         assertFalse(hasPseudoClass(2, NEEDS_CONVERSION), "AC3");
         assertFalse(hasPseudoClass(4, NEEDS_CONVERSION), "subtitles");
+    }
+
+    @Test
+    void highlightFollowsChosenAction() throws Exception {
+        onFxThread(() -> {
+            plan(2).setTargetCodec(AudioCodec.EAC3);   // AC3 re-encoded
+            plan(3).setTargetCodec(AudioCodec.COPY);   // DTS kept as is
+            FxTestSupport.layout(root);
+        });
+
+        assertTrue(hasPseudoClass(2, NEEDS_CONVERSION), "AC3 -> E-AC3");
+        assertFalse(hasPseudoClass(3, NEEDS_CONVERSION), "DTS -> Kopiuj");
+    }
+
+    @Test
+    void removedTrackIsNotHighlighted() throws Exception {
+        onFxThread(() -> {
+            plan(3).setKeep(false);
+            FxTestSupport.layout(root);
+        });
+
+        assertFalse(hasPseudoClass(3, NEEDS_CONVERSION), "nothing is converted in a removed track");
+        assertTrue(hasPseudoClass(3, REMOVED));
     }
 
     @Test
@@ -302,19 +442,23 @@ class TrackTableTest {
 
         assertTrue(css.contains(":needs-conversion"), "base.css has no :needs-conversion rule");
         assertTrue(css.contains(":removed"), "base.css has no :removed rule");
+        assertTrue(css.contains(".highlighted"), "base.css has no rule for the orange action list");
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /** Video and one AAC track. */
+    private static MediaInfo other() {
+        return new MediaInfo(Path.of("other.mkv"), 10, List.of(
+                new StreamInfo(0, StreamType.VIDEO, "h264", null, 0, null, "und", null, true),
+                new StreamInfo(1, StreamType.AUDIO, "aac", "LC", 2, "stereo", "pol", null, true)));
+    }
 
     private TrackPlan plan(int streamIndex) {
         return table.getItems().stream()
                 .filter(p -> p.getStream().index() == streamIndex)
                 .findFirst()
                 .orElseThrow();
-    }
-
-    private Object cellData(String columnId, int streamIndex) {
-        return column(columnId).getCellData(plan(streamIndex));
     }
 
     private TableColumn<TrackPlan, ?> column(String columnId) {
@@ -340,6 +484,52 @@ class TrackTableTest {
                 .filter(c -> c.getTableColumn() == column)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("no " + columnId + " cell for stream " + streamIndex));
+    }
+
+    /** A fresh cell of the column shown first in one row, then moved to another, as scrolling does. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private TableCell<?, ?> reusedCell(String columnId, int firstRow, int secondRow) throws Exception {
+        return callOnFxThread(() -> {
+            TableColumn column = column(columnId);
+            TableCell cell = (TableCell) column.getCellFactory().call(column);
+            TableRow<TrackPlan> row = new TableRow<>();
+            row.updateTableView(table);
+            cell.updateTableView(table);
+            cell.updateTableColumn(column);
+            cell.updateTableRow(row);
+            row.updateIndex(firstRow);
+            cell.updateIndex(firstRow);
+            row.updateIndex(secondRow);
+            cell.updateIndex(secondRow);
+            return cell;
+        });
+    }
+
+    private void assertType(int streamIndex, String text, String styleClass) {
+        TableCell<?, ?> type = cell("typeColumn", streamIndex);
+        assertEquals(text, type.getText());
+        assertTrue(type.getStyleClass().contains(styleClass), type.getStyleClass().toString());
+    }
+
+    private void assertBadge(int streamIndex, String text, String styleClass) {
+        Label badge = assertInstanceOf(Label.class, cell("languageColumn", streamIndex).getGraphic(), "no language badge");
+        assertEquals(text, badge.getText());
+        assertTrue(badge.getStyleClass().contains("language-badge"));
+        assertTrue(badge.getStyleClass().contains(styleClass), badge.getStyleClass().toString());
+    }
+
+    private List<Label> codecLines(int streamIndex) {
+        Node graphic = cell("codecColumn", streamIndex).getGraphic();
+        assertNotNull(graphic, "codec cell shows no lines");
+        try {
+            return callOnFxThread(() -> graphic.lookupAll(".label").stream().map(Label.class::cast).toList());
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private ComboBox<?> actionIn(int streamIndex) {
+        return assertInstanceOf(ComboBox.class, cell("actionColumn", streamIndex).getGraphic(), "no action list");
     }
 
     private static CheckBox checkBoxIn(TableCell<?, ?> cell) {

@@ -80,6 +80,20 @@ class MainViewTest {
     }
 
     @Test
+    void trackTableColumnsHaveFixedWidthsExceptCodecAndTitle() {
+        TableView<?> table = lookup("trackTable", TableView.class);
+
+        assertEquals(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS, table.getColumnResizePolicy(), "no horizontal scrolling");
+        for (TableColumn<?, ?> column : table.getColumns()) {
+            boolean flexible = List.of("codecColumn", "titleColumn").contains(column.getId());
+            assertEquals(!flexible, column.getMinWidth() == column.getMaxWidth(), column.getId());
+            assertTrue(column.getMinWidth() > 0, "no minimum width on " + column.getId());
+            // min = max already fixes the width; the constrained policy leaves non-resizable columns out of its sums
+            assertTrue(column.isResizable(), column.getId() + " must stay resizable for the resize policy");
+        }
+    }
+
+    @Test
     void trackTableHasAllColumnsInOrder() {
         TableView<?> table = lookup("trackTable", TableView.class);
 
