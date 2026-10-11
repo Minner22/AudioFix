@@ -5,17 +5,24 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -135,7 +142,7 @@ class MainViewTest {
     void sectionHeadersAndConsoleHaveStyleClasses() {
         long headers = root.lookupAll(".section-header").size();
 
-        assertEquals(2, headers, "Kolejka and Ścieżki should be section headers");
+        assertEquals(2, headers, "queue and tracks titles should be section headers");
         assertTrue(lookup("logArea", TextArea.class).getStyleClass().contains("console"));
     }
 
@@ -146,6 +153,83 @@ class MainViewTest {
         assertNotNull(root.getOnDragDropped());
         assertNotNull(root.getOnDragExited(), "the highlight must be removed when the drag leaves the window");
         assertTrue(root.getStyleClass().contains("drop-target"));
+    }
+
+    // ---------------------------------------------------------------- layout (#44)
+
+    @Test
+    void toolbarHasFileActionsLeftAndAboutRight() {
+        HBox toolBar = lookup("toolBar", HBox.class);
+        List<Node> items = toolBar.getChildren();
+
+        assertEquals(4, items.size(), items.toString());
+        assertEquals("addFilesButton", items.get(0).getId());
+        assertEquals("ffmpegSettingsButton", items.get(1).getId());
+        assertEquals(Priority.ALWAYS, HBox.getHgrow(items.get(2)), "spacer pushes the rest to the right");
+        assertEquals("aboutButton", items.get(3).getId());
+    }
+
+    @Test
+    void bottomBarHasActionsBeforeProgress() {
+        Node start = lookup("startButton", Button.class);
+        List<String> ids = start.getParent().getChildrenUnmodifiable().stream().map(Node::getId).toList();
+
+        assertEquals(List.of("startButton", "quickConvertButton", "cancelButton", "progressBar"), ids);
+    }
+
+    @Test
+    void buttonsHaveIcons() {
+        Map<String, Icon.Glyph> icons = Map.of(
+                "addFilesButton", Icon.Glyph.ADD,
+                "ffmpegSettingsButton", Icon.Glyph.SETTINGS,
+                "aboutButton", Icon.Glyph.ABOUT,
+                "removeFromQueueButton", Icon.Glyph.REMOVE,
+                "startButton", Icon.Glyph.START,
+                "quickConvertButton", Icon.Glyph.QUICK);
+
+        icons.forEach((id, glyph) -> {
+            Icon icon = assertInstanceOf(Icon.class, lookup(id, Button.class).getGraphic(), "no icon on " + id);
+            assertEquals(glyph, icon.getGlyph(), id);
+        });
+    }
+
+    @Test
+    void queueAndTracksAreCardsWithHeaders() {
+        for (String id : List.of("queuePanel", "tracksPanel")) {
+            VBox panel = lookup(id, VBox.class);
+            assertTrue(panel.getStyleClass().contains("panel"), id);
+            assertTrue(panel.getChildren().getFirst().getStyleClass().contains("panel-header"), id + " header");
+            assertTrue(panel.getChildren().getLast().getStyleClass().contains("panel-footer"), id + " footer");
+        }
+    }
+
+    @Test
+    void queuePanelKeepsItsWidthWhenWindowGrows() {
+        VBox queuePanel = lookup("queuePanel", VBox.class);
+
+        assertFalse(SplitPane.isResizableWithParent(queuePanel), "the tracks panel should take the extra width");
+        assertEquals(220, queuePanel.getMinWidth());
+    }
+
+    @Test
+    void outputFieldIsJoinedWithChangeButton() {
+        TextField field = lookup("outputField", TextField.class);
+        Button change = lookup("changeOutputButton", Button.class);
+
+        assertTrue(field.getStyleClass().containsAll(List.of("path-field", "joined-left")), field.getStyleClass().toString());
+        assertTrue(change.getStyleClass().contains("joined-right"));
+        assertEquals(field.getParent(), change.getParent(), "field and button in one box");
+        assertEquals(0, ((HBox) field.getParent()).getSpacing(), "no gap between them");
+    }
+
+    @Test
+    void longHeaderTextsAreNeverCut() {
+        for (String id : List.of("queueTitleLabel", "queueRemainingLabel", "tracksTitleLabel", "tracksInfoLabel",
+                "trackCountLabel")) {
+            assertEquals(Region.USE_PREF_SIZE, lookup(id, Label.class).getMinWidth(), "minWidth=\"-Infinity\" missing on " + id);
+        }
+        assertEquals(OverrunStyle.CENTER_ELLIPSIS, lookup("tracksFileLabel", Label.class).getTextOverrun(),
+                "only the file name is shortened, keeping its end");
     }
 
     // ---------------------------------------------------------------- helpers

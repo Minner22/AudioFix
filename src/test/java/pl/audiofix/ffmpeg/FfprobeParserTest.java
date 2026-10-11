@@ -196,6 +196,21 @@ class FfprobeParserTest {
     }
 
     @Test
+    void parsesContainerName() {
+        String json = """
+                { "streams": [], "format": { "format_name": "matroska,webm", "format_long_name": "Matroska / WebM" } }
+                """;
+
+        assertEquals("Matroska / WebM", parser.parse(FILE, json).formatName());
+    }
+
+    @Test
+    void missingContainerNameIsNull() {
+        assertNull(parser.parse(FILE, "{ \"streams\": [], \"format\": {} }").formatName());
+        assertNull(parser.parse(FILE, "{ \"streams\": [] }").formatName());
+    }
+
+    @Test
     void missingFormatGivesZeroSize() {
         String json = """
                 { "streams": [] }
@@ -236,6 +251,7 @@ class FfprobeParserTest {
         assertTrue(info.audioStreams().stream().anyMatch(StreamInfo::isDts), "no DTS audio stream");
         assertTrue(info.durationSec() > 0, "duration not parsed");
         assertEquals(54_744_830_678L, info.sizeBytes(), "size not parsed");
+        assertEquals("Matroska / WebM", info.formatName(), "container not parsed");
         for (int i = 0; i < info.streams().size(); i++) {
             assertEquals(i, info.streams().get(i).index(), "stream order differs from ffprobe indexes");
         }

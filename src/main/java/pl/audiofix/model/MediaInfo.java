@@ -3,7 +3,7 @@ package pl.audiofix.model;
 import java.nio.file.Path;
 import java.util.List;
 
-public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams, long sizeBytes) {
+public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams, long sizeBytes, String formatName) {
 
     public MediaInfo {
 
@@ -11,7 +11,12 @@ public record MediaInfo(Path path, double durationSec, List<StreamInfo> streams,
     }
 
     public MediaInfo(Path path, double durationSec, List<StreamInfo> streams) {
-        this(path, durationSec, streams, 0);
+        this(path, durationSec, streams, 0, null);
+    }
+
+    public MediaInfo(Path path, double durationSec, List<StreamInfo> streams, long sizeBytes) {
+
+        this(path, durationSec, streams, sizeBytes, null);
     }
 
     public List<StreamInfo> audioStreams() {

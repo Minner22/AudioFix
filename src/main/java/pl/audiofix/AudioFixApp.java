@@ -21,6 +21,9 @@ public class AudioFixApp extends Application {
 
     public static final String WINDOW_TITLE = "AudioFix";
 
+    static final double MIN_WIDTH = 960;
+    static final double MIN_HEIGHT = 600;
+
     private static final Logger log = LoggerFactory.getLogger(AudioFixApp.class);
 
     private MainController controller;
@@ -50,7 +53,7 @@ public class AudioFixApp extends Application {
         controller.setHostServices(getHostServices());
 
         primaryStage.setScene(createScene(root));
-        primaryStage.setTitle(windowTitle());
+        configureWindow(primaryStage);
         primaryStage.show();
     }
 
@@ -73,5 +76,12 @@ public class AudioFixApp extends Application {
         if (controller != null) {
             controller.shutdown();
         }
+    }
+
+    static void configureWindow(Stage stage) {
+
+        stage.setTitle(windowTitle());
+        stage.setMinWidth(MIN_WIDTH);
+        stage.setMinHeight(MIN_HEIGHT);
     }
 }

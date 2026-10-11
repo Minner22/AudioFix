@@ -83,22 +83,7 @@ class QueueCellTest {
         assertEquals(JobStatus.values().length, QueueCell.STATUS_CLASSES.stream().distinct().count());
     }
 
-    // ---------------------------------------------------------------- size and container
-
-    @ParameterizedTest(name = "{0} B -> \"{1}\"")
-    @CsvSource(delimiter = '|', textBlock = """
-            0              | 0 B
-            1023           | 1023 B
-            1024           | 1,0 KB
-            1536           | 1,5 KB
-            5242880        | 5,0 MB
-            1503238553     | 1,4 GB
-            34789235712    | 32,4 GB
-            2199023255552  | 2,0 TB
-            """)
-    void sizeLikeWindowsExplorer(long bytes, String expected) {
-        assertEquals(expected, QueueCell.sizeText(bytes));
-    }
+    // ---------------------------------------------------------------- size and container (size format: TextFormatsTest)
 
     @ParameterizedTest(name = "{0} -> \"{1}\"")
     @CsvSource(delimiter = '|', textBlock = """

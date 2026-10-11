@@ -1,31 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import pl.audiofix.ui.Icon?>
 
 <BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="pl.audiofix.ui.MainController" fx:id="rootPane" styleClass="drop-target">
     <top>
-        <ToolBar>
-            <Button fx:id="addFilesButton" text="Dodaj pliki…" minWidth="-Infinity" onAction="#onAddFiles"/>
-            <Button fx:id="ffmpegSettingsButton" text="Ustawienia ffmpeg" minWidth="-Infinity" onAction="#onFfmpegSettings"/>
-            <Button fx:id="aboutButton" text="O programie" minWidth="-Infinity" onAction="#onAbout"/>
-        </ToolBar>
+        <HBox fx:id="toolBar" styleClass="tool-bar" alignment="CENTER_LEFT">
+            <Button fx:id="addFilesButton" text="Dodaj pliki…" minWidth="-Infinity" onAction="#onAddFiles">
+                <graphic><Icon glyph="ADD"/></graphic>
+            </Button>
+            <Button fx:id="ffmpegSettingsButton" text="Ustawienia ffmpeg" minWidth="-Infinity" onAction="#onFfmpegSettings">
+                <graphic><Icon glyph="SETTINGS"/></graphic>
+            </Button>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="aboutButton" text="O programie" minWidth="-Infinity" onAction="#onAbout">
+                <graphic><Icon glyph="ABOUT"/></graphic>
+            </Button>
+        </HBox>
     </top>
     <center>
-        <SplitPane dividerPositions="0.25">
-            <VBox spacing="8">
-                <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
-                <Label text="Kolejka" styleClass="section-header"/>
-                <ListView fx:id="queueList" VBox.vgrow="ALWAYS"/>
-                <Button fx:id="removeFromQueueButton" text="Usuń z kolejki" minWidth="-Infinity" styleClass="button-danger" onAction="#onRemoveFromQueue"/>
-            </VBox>
-            <VBox spacing="8">
-                <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
-                <HBox spacing="8" alignment="CENTER_LEFT">
-                    <Label text="Ścieżki" styleClass="section-header"/>
+        <SplitPane dividerPositions="0.25" styleClass="workspace">
+            <VBox fx:id="queuePanel" styleClass="panel" minWidth="220" prefWidth="270" SplitPane.resizableWithParent="false">
+                <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="8">
+                    <Label fx:id="queueTitleLabel" text="Kolejka plików (0)" styleClass="section-header" minWidth="-Infinity"/>
                     <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="queueRemainingLabel" text="Pozostało: 0" styleClass="panel-note" minWidth="-Infinity"/>
+                </HBox>
+                <ListView fx:id="queueList" VBox.vgrow="ALWAYS"/>
+                <HBox styleClass="panel-footer" alignment="CENTER_LEFT">
+                    <Button fx:id="removeFromQueueButton" text="Usuń z kolejki" minWidth="-Infinity" styleClass="button-danger" onAction="#onRemoveFromQueue">
+                        <graphic><Icon glyph="REMOVE"/></graphic>
+                    </Button>
+                </HBox>
+            </VBox>
+            <VBox fx:id="tracksPanel" styleClass="panel">
+                <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="6">
+                    <Label fx:id="tracksTitleLabel" text="Ścieżki" styleClass="section-header" minWidth="-Infinity"/>
+                    <Label fx:id="tracksFileLabel" styleClass="file-name" textOverrun="CENTER_ELLIPSIS" ellipsisString="…"/>
+                    <Label fx:id="tracksInfoLabel" styleClass="panel-note" minWidth="-Infinity"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="trackCountLabel" styleClass="panel-note" minWidth="-Infinity"/>
                     <Button fx:id="applyToAllButton" text="Zastosuj do wszystkich" minWidth="-Infinity" onAction="#onApplyToAll">
                         <tooltip>
                             <Tooltip text="Kopiuje „Zostaw”, akcję i ścieżki domyślne do pozostałych oczekujących plików z tym samym układem ścieżek."/>
@@ -45,10 +61,12 @@
                         <TableColumn fx:id="defaultColumn" text="Domyślna"/>
                     </columns>
                 </TableView>
-                <HBox spacing="8" alignment="CENTER_LEFT">
-                    <Label text="Plik wyjściowy:"/>
-                    <TextField fx:id="outputField" HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="changeOutputButton" text="Zmień…" minWidth="-Infinity" onAction="#onChangeOutput"/>
+                <HBox styleClass="panel-footer" alignment="CENTER_LEFT" spacing="8">
+                    <Label text="Plik wyjściowy:" styleClass="field-label" minWidth="-Infinity"/>
+                    <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                        <TextField fx:id="outputField" HBox.hgrow="ALWAYS" styleClass="path-field,joined-left"/>
+                        <Button fx:id="changeOutputButton" text="Zmień…" minWidth="-Infinity" styleClass="joined-right" onAction="#onChangeOutput"/>
+                    </HBox>
                     <Button fx:id="outputFolderButton" text="Folder dla wszystkich…" minWidth="-Infinity" onAction="#onOutputFolderForAll">
                         <tooltip>
                             <Tooltip text="Zapisuje wszystkie oczekujące pliki do wybranego folderu, z zachowaniem ich nazw."/>
@@ -59,11 +77,13 @@
         </SplitPane>
     </center>
     <bottom>
-        <VBox spacing="8">
-            <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+        <VBox styleClass="action-bar" spacing="8">
             <HBox spacing="8" alignment="CENTER_LEFT">
-                <Button fx:id="startButton" text="Start" minWidth="-Infinity" styleClass="button-primary" onAction="#onStart"/>
+                <Button fx:id="startButton" text="Start" minWidth="-Infinity" styleClass="button-primary" onAction="#onStart">
+                    <graphic><Icon glyph="START"/></graphic>
+                </Button>
                 <Button fx:id="quickConvertButton" text="Szybka konwersja" minWidth="-Infinity" styleClass="button-warning" onAction="#onQuickConvert">
+                    <graphic><Icon glyph="QUICK"/></graphic>
                     <tooltip>
                         <Tooltip text="Wideo + jedna ścieżka audio (najwięcej kanałów) jako PCM 24-bit, bez edycji ścieżek. Pozostałe ścieżki audio i napisy obrazkowe zostaną pominięte."/>
                     </tooltip>
