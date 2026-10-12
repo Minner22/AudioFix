@@ -99,7 +99,7 @@
                 <Button fx:id="quickConvertButton" text="Szybka konwersja" minWidth="-Infinity" styleClass="button-warning" onAction="#onQuickConvert">
                     <graphic><Icon glyph="QUICK"/></graphic>
                     <tooltip>
-                        <Tooltip text="Wideo + jedna ścieżka audio (najwięcej kanałów) jako PCM 24-bit, bez edycji ścieżek. Pozostałe ścieżki audio i napisy obrazkowe zostaną pominięte."/>
+                        <Tooltip text="Wideo + jedna ścieżka audio (domyślna, a gdy żadna nie jest domyślna: ta z największą liczbą kanałów) jako PCM 24-bit, bez edycji ścieżek. Pozostałe ścieżki audio i napisy obrazkowe zostaną pominięte."/>
                     </tooltip>
                 </Button>
                 <Button fx:id="cancelButton" text="Anuluj" minWidth="-Infinity" onAction="#onCancel"/>

@@ -2,6 +2,7 @@ package pl.audiofix.ffmpeg;
 
 import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.ConversionJob;
+import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
@@ -10,6 +11,7 @@ import pl.audiofix.model.TrackTitles;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CommandBuilder {
@@ -22,7 +24,7 @@ public class CommandBuilder {
 
         return switch (job.getMode()) {
             case PLANNED -> build(ffmpeg, job.getInput(), job.getOutput(), job.getPlans());
-            case QUICK -> buildQuick(ffmpeg, job.getInput(), job.getOutput());
+            case QUICK -> buildQuick(ffmpeg, job.getMediaInfo(), job.getOutput());
         };
     }
 
@@ -50,14 +52,34 @@ public class CommandBuilder {
      * The command used before AudioFix existed: ffmpeg picks one video, one audio (most channels)
      * and one text subtitle stream itself; the audio is always converted to PCM 24-bit.
      */
-    public List<String> buildQuick(Path ffmpeg, Path input, Path output) {
+    public List<String> buildQuick(Path ffmpeg, MediaInfo media, Path output) {
 
-        List<String> args = new ArrayList<>(inputArgs(ffmpeg, input));
+        List<String> args = new ArrayList<>(inputArgs(ffmpeg, media.path()));
         args.addAll(List.of("-c:v", "copy", "-c:a", AudioCodec.PCM_S24LE.getFfmpegName()));
+        autoSelectedAudio(media.streams())
+                .flatMap(audio -> TrackTitles.forConversion(audio, AudioCodec.PCM_S24LE))
+                .ifPresent(title -> args.addAll(List.of("-metadata:s:a:0", "title=" + title)));
         args.addAll(PROGRESS_TO_STDOUT);
         args.add(output.toString());
 
         return args;
+    }
+
+    static Optional<StreamInfo> autoSelectedAudio(List<StreamInfo> streams) {
+
+        StreamInfo chosen = null;
+        for (StreamInfo stream : streams) {
+            if (stream.isAudio() && (chosen == null || score(stream) > score(chosen))) {
+                chosen = stream;
+            }
+        }
+
+        return Optional.ofNullable(chosen);
+    }
+
+    private static long score(StreamInfo audio) {
+
+        return audio.channels() + (audio.isDefault() ? 5_000_000L : 0);
     }
 
     public static String toCommandLine(List<String> args) {
