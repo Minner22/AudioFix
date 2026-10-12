@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
+import pl.audiofix.ui.AppIcon;
 import pl.audiofix.ui.FfmpegSetup;
 import pl.audiofix.ui.MainController;
 import pl.audiofix.ui.theme.Theme;
@@ -85,6 +86,7 @@ public class AudioFixApp extends Application {
     static void configureWindow(Stage stage) {
 
         stage.setTitle(windowTitle());
+        AppIcon.apply(stage);
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
     }

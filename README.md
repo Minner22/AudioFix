@@ -51,6 +51,32 @@ mvn javafx:run   # uruchomienie aplikacji
 mvn test         # testy
 ```
 
+## Instalacja
+
+Instalator `AudioFix-<wersja>.exe` ma w sobie Javę, więc nie trzeba jej instalować. Instaluje się na koncie
+bieżącego użytkownika do `%LOCALAPPDATA%\AudioFix` (bez uprawnień administratora) i dodaje AudioFix do menu Start
+oraz skrót na pulpicie. Nowsza wersja instalatora zastępuje starszą, a odinstalowanie jest w
+*Ustawienia → Aplikacje*. ffmpeg nadal trzeba mieć osobno (patrz [Wymagania](#wymagania)).
+
+### Budowanie instalatora
+
+  ```bash
+  mvn -Pinstaller package                             # instalator target/installer/AudioFix-<wersja>.exe
+  mvn -Pinstaller package -Dinstaller.type=app-image  # sam folder target/installer/AudioFix z AudioFix.exe
+  ```
+
+- Instalator `.exe` wymaga [WiX Toolset](https://wixtoolset.org), np. `winget install --id WiXToolset.WiXToolset -e`
+  w PowerShellu uruchomionym jako administrator (włącza też potrzebny .NET Framework 3.5).
+  Wariant `app-image` działa bez WiX: folder można spakować do `.zip` i uruchamiać `AudioFix.exe` bez instalacji.
+- Dodaj `-DskipTests`, żeby nie czekać na testy.
+- Wbudowana Java zawiera tylko potrzebne moduły i dane lokalizacji dla polskiego i angielskiego.
+
+### Logi
+
+Aplikacja zapisuje log do `%LOCALAPPDATA%\AudioFix\logs\audiofix.log`: jeden plik na dzień, przez 14 dni,
+razem najwyżej 50 MB. Folder otwiera przycisk **Folder logów** w oknie „O programie”. Przy zgłaszaniu błędu
+dołącz plik z dnia, w którym wystąpił.
+
 ## Jak to działa
 
 Dla każdego pliku aplikacja odczytuje listę strumieni przez `ffprobe`, a następnie buduje komendę `ffmpeg`, np.:

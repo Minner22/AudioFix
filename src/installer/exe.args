@@ -1,0 +1,6 @@
+--win-menu
+--win-menu-group AudioFix
+--win-shortcut
+--win-per-user-install
+--win-upgrade-uuid 9baec39d-4aca-4dc7-bd01-70efbfffd09e
+--about-url https://github.com/Minner22/AudioFix

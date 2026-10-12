@@ -97,4 +97,160 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+            Windows installer with its own Java runtime (#14): mvn -Pinstaller package
+            The .exe needs WiX Toolset (https://wixtoolset.org); without it build a folder with AudioFix.exe:
+            mvn -Pinstaller package -Dinstaller.type=app-image
+        -->
+        <profile>
+            <id>installer</id>
+            <properties>
+                <installer.type>exe</installer.type>
+                <installer.input>${project.build.directory}/jpackage/input</installer.input>
+                <installer.output>${project.build.directory}/installer</installer.output>
+                <!-- jdeps finds the first six; locale data (Polish and English only, see jlink options) keeps "32,4 GB" Polish, the rest are used through reflection -->
+                <installer.modules>java.base,java.desktop,java.prefs,java.scripting,java.sql,jdk.jfr,java.logging,java.naming,jdk.unsupported,jdk.localedata,jdk.charsets</installer.modules>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- jpackage takes only digits: 1.0.0-SNAPSHOT becomes 1.0.0 -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.1</version>
+                        <executions>
+                            <execution>
+                                <id>installer-version</id>
+                                <goals>
+                                    <goal>parse-version</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- jpackage refuses to write over an existing image, so the old one goes first -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>installer-clean</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <configuration>
+                                    <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                                    <!-- jpackage makes AudioFix.exe read-only -->
+                                    <force>true</force>
+                                    <filesets>
+                                        <fileset>
+                                            <directory>${project.build.directory}/jpackage</directory>
+                                        </fileset>
+                                        <fileset>
+                                            <directory>${installer.output}</directory>
+                                        </fileset>
+                                    </filesets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- the app jar and every runtime jar in one folder: jpackage puts them all on the classpath -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.9.0</version>
+                        <executions>
+                            <execution>
+                                <id>installer-libs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <outputDirectory>${installer.input}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>installer-app-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${installer.input}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>${project.build.finalName}.jar</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.4</version>
+                        <executions>
+                            <execution>
+                                <id>installer-jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>${installer.type}</argument>
+                                        <argument>--name</argument>
+                                        <argument>AudioFix</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>AudioFix</argument>
+                                        <!-- English: the MSI holds only the Windows-1252 code page, Polish letters break WiX (LGHT0311) -->
+                                        <argument>--description</argument>
+                                        <argument>Converts DTS and TrueHD audio tracks in films so a TV can play them</argument>
+                                        <argument>--icon</argument>
+                                        <argument>${project.basedir}/src/installer/AudioFix.ico</argument>
+                                        <argument>--input</argument>
+                                        <argument>${installer.input}</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>${project.build.finalName}.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>pl.audiofix.Launcher</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>--enable-native-access=ALL-UNNAMED</argument>
+                                        <argument>--add-modules</argument>
+                                        <argument>${installer.modules}</argument>
+                                        <argument>--jlink-options</argument>
+                                        <argument>--strip-debug --no-man-pages --no-header-files --compress=zip-6 --include-locales=pl,en</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${installer.output}</argument>
+                                        <!-- Start menu, shortcut, per-user install, about URL: jpackage takes them only for the exe -->
+                                        <argument>@${project.basedir}/src/installer/${installer.type}.args</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

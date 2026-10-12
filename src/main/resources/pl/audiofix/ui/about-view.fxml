@@ -18,6 +18,12 @@
     <Label text="Licencje"/>
     <TextArea fx:id="licensesArea" editable="false" wrapText="true" prefRowCount="10" VBox.vgrow="ALWAYS"/>
     <HBox spacing="8" alignment="CENTER_RIGHT">
+        <Button fx:id="logsButton" text="Folder logów" minWidth="-Infinity" onAction="#onLogs">
+            <tooltip>
+                <Tooltip text="Otwiera folder z plikami logów, np. do zgłoszenia błędu."/>
+            </tooltip>
+        </Button>
+        <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="copyButton" text="Kopiuj informacje" minWidth="-Infinity" onAction="#onCopy"/>
         <Button fx:id="closeButton" text="Zamknij" minWidth="-Infinity" onAction="#onClose" cancelButton="true" defaultButton="true"/>
     </HBox>
