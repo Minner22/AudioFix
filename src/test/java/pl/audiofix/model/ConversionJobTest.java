@@ -101,6 +101,73 @@ class ConversionJobTest {
         assertEquals(List.of("ffmpeg -i in.mkv out.mkv", "Stream mapping:"), job.getLog());
     }
 
+    @Test
+    void logKeepsOnlyLatestLines() {
+        ConversionJob job = job();
+
+        for (int i = 0; i < ConversionJob.MAX_LOG_LINES + 5; i++) {
+            job.appendLog("linia " + i);
+        }
+
+        assertEquals(ConversionJob.MAX_LOG_LINES, job.getLog().size());
+        assertEquals("linia 5", job.getLog().getFirst(), "the oldest lines go first");
+        assertEquals("linia " + (ConversionJob.MAX_LOG_LINES + 4), job.getLog().getLast());
+    }
+
+    @Test
+    void doneJobLogsItsOutputFile() {
+        ConversionJob job = job();
+        job.markRunning();
+
+        job.markDone();
+
+        assertEquals("Gotowe: Film_fixed.mkv", job.getLog().getLast());
+    }
+
+    @Test
+    void failedJobLogsTheError() {
+        ConversionJob job = job();
+        job.markRunning();
+
+        job.markFailed("ffmpeg exited with code 1");
+
+        assertEquals("Błąd: ffmpeg exited with code 1", job.getLog().getLast());
+    }
+
+    @Test
+    void cancelledJobLogsIt() {
+        ConversionJob job = job();
+        job.markRunning();
+
+        job.markCancelled();
+
+        assertEquals("Anulowano", job.getLog().getLast());
+    }
+
+    // ---------------------------------------------------------------- converts audio (#46)
+
+    @Test
+    void jobWithConvertedTrackConvertsAudio() {
+        assertTrue(job().convertsAudio(), "DTS -> PCM");
+    }
+
+    @Test
+    void jobThatOnlyCopiesDoesNotConvertAudio() {
+        ConversionJob job = job();
+        job.getPlans().get(1).setTargetCodec(AudioCodec.COPY);
+
+        assertFalse(job.convertsAudio());
+    }
+
+    @Test
+    void quickJobAlwaysConvertsAudio() {
+        List<TrackPlan> copyOnly = plans();
+        copyOnly.get(1).setTargetCodec(AudioCodec.COPY);
+
+        assertTrue(new ConversionJob(media(), copyOnly, OUTPUT, ConversionMode.QUICK).convertsAudio(),
+                "quick conversion ignores the plan and makes PCM");
+    }
+
     // ---------------------------------------------------------------- failure and cancellation
 
     @Test

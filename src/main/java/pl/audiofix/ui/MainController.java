@@ -4,6 +4,7 @@ import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.concurrent.Task;
 import javafx.css.PseudoClass;
@@ -17,6 +18,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.audiofix.AppVersion;
 import pl.audiofix.ffmpeg.*;
 import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.ConversionJob;
@@ -83,21 +85,19 @@ public class MainController {
 
     @FXML private Button startButton;
     @FXML private Button cancelButton;
+    @FXML private Label progressStatusLabel;
+    @FXML private Label progressPercentLabel;
     @FXML private ProgressBar progressBar;
-    @FXML private TextArea logArea;
+    @FXML private ListView<String> logList;
     @FXML private Button aboutButton;
     @FXML private Button quickConvertButton;
 
 
-    private final ListChangeListener<String> logFollower = change -> {
-        while (change.next()) {
-            change.getAddedSubList().forEach(this::appendLog);
-        }
-    };
-
     private final InvalidationListener shownStatusListener = observable -> updateControls();
 
     private FfmpegPaths ffmpegPaths;
+    private String ffmpegVersionLine;
+    private ProgressView progressView;
     private File lastDirectory;
     private HostServices hostServices;
 
@@ -110,6 +110,16 @@ public class MainController {
     public void setFfmpegPaths(FfmpegPaths ffmpegPaths) {
 
         this.ffmpegPaths = ffmpegPaths;
+
+        // for the first line of every file's log; read once in the background, ffmpeg -version takes a moment
+        Task<String> version = new Task<>() {
+            @Override
+            protected String call() {
+                return FfmpegVersion.firstLine(ffmpegPaths.ffmpeg()).orElse(null);
+            }
+        };
+        version.setOnSucceeded(event -> ffmpegVersionLine = version.getValue());
+        Thread.ofVirtual().start(version);
     }
 
     public void setHostServices(HostServices hostServices) {
@@ -151,11 +161,13 @@ public class MainController {
                 onQueueFinished();
             }
         });
+        progressView = new ProgressView(progressBar, progressStatusLabel, progressPercentLabel, System::nanoTime);
         queue.currentJobProperty().addListener((observable, previous, job) -> {
             if (job != null) {
-                progressBar.progressProperty().bind(job.progressProperty());   // stays on the last job when idle
+                progressView.follow(job);   // stays on the last job when idle
             }
         });
+        LogConsole.configure(logList);
 
         trackTable.setPlaceholder(new Label("Dodaj plik, aby zobaczyć jego ścieżki"));
         TrackTableConfigurer.configureTable(trackTable);
@@ -314,6 +326,7 @@ public class MainController {
 
         Path output = OutputPathResolver.defaultOutput(info.path(), outputsInUse(null));
         ConversionJob job = new ConversionJob(info, plans, output, ConversionMode.PLANNED);
+        job.appendLog(LogLines.versionLine(AppVersion.current(), ffmpegVersionLine));
         job.appendLog("Wczytano " + info.path().getFileName() + ": " + info.streams().size() + " ścieżek");
 
         queue.add(job);
@@ -325,7 +338,6 @@ public class MainController {
     private void showJob(ConversionJob job) {
 
         if (shown != null) {
-            shown.getLog().removeListener(logFollower);
             shown.statusProperty().removeListener(shownStatusListener);
             outputField.textProperty().unbind();
         }
@@ -334,16 +346,14 @@ public class MainController {
         if (job == null) {
             trackTable.getItems().clear();
             outputField.clear();
-            logArea.clear();
+            logList.setItems(FXCollections.emptyObservableList());
         } else {
             trackTable.getItems().setAll(job.getPlans().stream()
                     .filter(plan -> TrackTableConfigurer.isShown(plan.getStream().type()))
                     .toList());
             outputField.textProperty().bind(Bindings.createStringBinding(
                     () -> job.getOutput().toString(), job.outputProperty()));
-            logArea.clear();
-            job.getLog().forEach(this::appendLog);
-            job.getLog().addListener(logFollower);
+            logList.setItems(job.getLog());
             job.statusProperty().addListener(shownStatusListener);
         }
 
@@ -676,11 +686,6 @@ public class MainController {
     private static String fileNames(List<Path> files) {
 
         return String.join(System.lineSeparator(), files.stream().map(file -> file.getFileName().toString()).toList());
-    }
-
-    private void appendLog(String line) {
-
-        logArea.appendText(line + System.lineSeparator());
     }
 
     private void showError(String header, Throwable error) {

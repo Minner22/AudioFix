@@ -6,7 +6,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -49,7 +48,7 @@ class QueueViewTest {
     private ListView<ConversionJob> queueList;
     private TableView<TrackPlan> table;
     private TextField outputField;
-    private TextArea logArea;
+    private ListView<String> logList;
     private Button changeOutputButton;
     private Button removeButton;
     private Button startButton;
@@ -71,7 +70,7 @@ class QueueViewTest {
             queueList = (ListView<ConversionJob>) root.lookup("#queueList");
             table = (TableView<TrackPlan>) root.lookup("#trackTable");
             outputField = (TextField) root.lookup("#outputField");
-            logArea = (TextArea) root.lookup("#logArea");
+            logList = (ListView<String>) root.lookup("#logList");
             changeOutputButton = (Button) root.lookup("#changeOutputButton");
             removeButton = (Button) root.lookup("#removeFromQueueButton");
             startButton = (Button) root.lookup("#startButton");
@@ -142,8 +141,9 @@ class QueueViewTest {
         assertEquals(first.getPlans().stream().filter(p -> p.getStream().type() != StreamType.ATTACHMENT).toList(),
                 table.getItems());
         assertEquals(dir.resolve("Odcinek 1_fixed.mkv").toString(), outputField.getText());
-        assertTrue(logArea.getText().startsWith("Wczytano Odcinek 1.mkv: 3 ścieżek"), logArea.getText());
-        assertFalse(logArea.getText().contains("Odcinek 2"), "log of the other file leaked in:\n" + logArea.getText());
+        assertTrue(logList.getItems().getFirst().startsWith("AudioFix "), "log starts with the versions: " + logText());
+        assertTrue(logText().contains("Wczytano Odcinek 1.mkv: 3 ścieżek"), logText());
+        assertFalse(logText().contains("Odcinek 2"), "log of the other file leaked in:\n" + logText());
     }
 
     @Test
@@ -170,8 +170,8 @@ class QueueViewTest {
             first.appendLog("linia pierwszego");
         });
 
-        assertTrue(logArea.getText().contains("linia drugiego"));
-        assertFalse(logArea.getText().contains("linia pierwszego"), "only the selected file's log is shown");
+        assertTrue(logText().contains("linia drugiego"));
+        assertFalse(logText().contains("linia pierwszego"), "only the selected file's log is shown");
     }
 
     // ---------------------------------------------------------------- editing lock
@@ -267,7 +267,7 @@ class QueueViewTest {
         assertTrue(queueList.getItems().isEmpty());
         assertTrue(table.getItems().isEmpty());
         assertEquals("", outputField.getText());
-        assertEquals("", logArea.getText());
+        assertEquals("", logText());
         assertTrue(changeOutputButton.isDisable());
     }
 
@@ -492,5 +492,10 @@ class QueueViewTest {
                 .map(window -> (DialogPane) window.getScene().getRoot())
                 .map(pane -> pane.getHeaderText() + "\n" + pane.getContentText())
                 .toList());
+    }
+
+    /** The console's lines as one text. */
+    private String logText() {
+        return String.join(System.lineSeparator(), logList.getItems());
     }
 }

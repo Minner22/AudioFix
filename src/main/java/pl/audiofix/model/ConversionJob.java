@@ -17,6 +17,9 @@ import java.util.Objects;
 
 public class ConversionJob {
 
+    /** Lines kept in the log; older ones are dropped, so a long conversion does not grow it without end. */
+    public static final int MAX_LOG_LINES = 2000;
+
     private final MediaInfo mediaInfo;
     private final List<TrackPlan> plans;
     private final ObjectProperty<ConversionMode> mode;
@@ -132,6 +135,7 @@ public class ConversionJob {
 
         transition(JobStatus.RUNNING, JobStatus.DONE);
         progress.set(1);
+        appendLog("Gotowe: " + getOutput().getFileName());
     }
 
     public void markFailed(String message) {
@@ -139,6 +143,7 @@ public class ConversionJob {
         transition(JobStatus.RUNNING, JobStatus.FAILED);
         errorMessage.set(message);
         progress.set(0);
+        appendLog("Błąd: " + message);
     }
 
     public void markCancelled() {
@@ -151,6 +156,7 @@ public class ConversionJob {
 
         status.set(JobStatus.CANCELLED);
         progress.set(0);
+        appendLog("Anulowano");
     }
 
     public void setProgress(double fraction) {
@@ -170,6 +176,15 @@ public class ConversionJob {
     public void appendLog(String line) {
 
         log.add(line);
+        if (log.size() > MAX_LOG_LINES) {
+            log.remove(0, log.size() - MAX_LOG_LINES);
+        }
+    }
+
+    /** True when ffmpeg re-encodes audio: quick conversion always does, a planned one when a kept track is converted. */
+    public boolean convertsAudio() {
+
+        return getMode() == ConversionMode.QUICK || plans.stream().anyMatch(TrackPlan::isConverted);
     }
 
     private void transition(JobStatus from, JobStatus to) {

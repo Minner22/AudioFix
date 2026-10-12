@@ -12,10 +12,10 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -76,7 +76,7 @@ class MainViewTest {
         lookup("trackTable", TableView.class);
         lookup("outputField", TextField.class);
         lookup("progressBar", ProgressBar.class);
-        lookup("logArea", TextArea.class);
+        lookup("logList", ListView.class);
     }
 
     @Test
@@ -112,8 +112,22 @@ class MainViewTest {
     }
 
     @Test
-    void logIsReadOnly() {
-        assertFalse(lookup("logArea", TextArea.class).isEditable());
+    void consoleLinesCanBeSelectedTogether() {
+        // a ListView, not a TextArea: one color per line; whole lines are selected and copied
+        ListView<?> console = lookup("logList", ListView.class);
+
+        assertEquals(SelectionMode.MULTIPLE, console.getSelectionModel().getSelectionMode());
+        assertNotNull(console.getContextMenu(), "no copy menu");
+        assertEquals(List.of("Kopiuj", "Kopiuj wszystko"),
+                console.getContextMenu().getItems().stream().map(MenuItem::getText).toList());
+    }
+
+    @Test
+    void consoleShowsAboutSixLines() {
+        ListView<?> console = lookup("logList", ListView.class);
+
+        assertEquals(96, console.getPrefHeight());
+        assertEquals(96, console.getMinHeight(), "the console must not shrink in a small window");
     }
 
     @Test
@@ -160,7 +174,7 @@ class MainViewTest {
         long headers = root.lookupAll(".section-header").size();
 
         assertEquals(2, headers, "queue and tracks titles should be section headers");
-        assertTrue(lookup("logArea", TextArea.class).getStyleClass().contains("console"));
+        assertTrue(lookup("logList", ListView.class).getStyleClass().contains("console"));
     }
 
     @Test
@@ -224,7 +238,22 @@ class MainViewTest {
         Node start = lookup("startButton", Button.class);
         List<String> ids = start.getParent().getChildrenUnmodifiable().stream().map(Node::getId).toList();
 
-        assertEquals(List.of("startButton", "quickConvertButton", "cancelButton", "progressBar"), ids);
+        assertEquals(4, ids.size(), ids.toString());
+        assertEquals(List.of("startButton", "quickConvertButton", "cancelButton"), ids.subList(0, 3));
+    }
+
+    @Test
+    void progressHasStatusAndPercentAboveBar() {
+        Node bar = lookup("progressBar", ProgressBar.class);
+        VBox info = assertInstanceOf(VBox.class, bar.getParent(), "bar and texts sit in one column");
+        HBox texts = assertInstanceOf(HBox.class, info.getChildren().getFirst());
+
+        assertEquals(bar, info.getChildren().getLast());
+        assertEquals(Priority.ALWAYS, HBox.getHgrow(info), "the progress column takes the rest of the row");
+        assertEquals("progressStatusLabel", texts.getChildren().getFirst().getId());
+        assertEquals("progressPercentLabel", texts.getChildren().getLast().getId());
+        assertEquals(Region.USE_PREF_SIZE, lookup("progressPercentLabel", Label.class).getMinWidth(),
+                "the percent and time left are never cut");
     }
 
     @Test

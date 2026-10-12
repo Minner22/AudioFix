@@ -2,6 +2,7 @@ package pl.audiofix.ui;
 
 import pl.audiofix.model.MediaInfo;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -13,6 +14,18 @@ final class TextFormats {
     private static final List<String> UNITS = List.of("B", "KB", "MB", "GB", "TB");
 
     private TextFormats() {
+    }
+
+    /** "02:15" below an hour, "1:02:15" from an hour on; rounded to whole seconds. */
+    static String duration(Duration duration) {
+
+        long seconds = Math.round(duration.toMillis() / 1000.0);
+        long hours = seconds / 3600;
+        long minutes = seconds / 60 % 60;
+        long rest = seconds % 60;
+        return hours > 0
+                ? String.format("%d:%02d:%02d", hours, minutes, rest)
+                : String.format("%02d:%02d", minutes, rest);
     }
 
     static String fileSize(long bytes) {
