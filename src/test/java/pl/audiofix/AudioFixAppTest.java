@@ -53,6 +53,7 @@ public class AudioFixAppTest {
         });
         Stage configured = stage.orTimeout(10, TimeUnit.SECONDS).join();
 
+        assertEquals(4, configured.getIcons().size(), "title bar, taskbar and Alt+Tab icons");
         assertEquals(960, configured.getMinWidth());
         assertEquals(600, configured.getMinHeight());
         assertEquals(AudioFixApp.windowTitle(), configured.getTitle());

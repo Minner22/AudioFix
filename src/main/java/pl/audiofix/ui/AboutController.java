@@ -9,16 +9,24 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import pl.audiofix.LogFiles;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public class AboutController {
 
     static final String REPOSITORY_URL = "https://github.com/Minner22/AudioFix";
 
+    private static final Logger log = LoggerFactory.getLogger(AboutController.class);
+
+    @FXML private Button logsButton;
     @FXML private Label appVersionLabel;
     @FXML private Hyperlink repositoryLink;
     @FXML private Label ffmpegLabel;
@@ -29,6 +37,7 @@ public class AboutController {
 
     private AboutInfo info;
     private HostServices hostServices;
+    private Path logsDirectory = LogFiles.directory();
 
     @FXML
     private void initialize() {
@@ -40,6 +49,11 @@ public class AboutController {
     void setHostServices(HostServices hostServices) {
 
         this.hostServices = hostServices;
+    }
+
+    void setLogsDirectory(Path logsDirectory) {
+
+        this.logsDirectory = logsDirectory;
     }
 
     void show(AboutInfo info) {
@@ -79,6 +93,21 @@ public class AboutController {
     private void onClose() {
 
         ((Stage) closeButton.getScene().getWindow()).close();
+    }
+
+    @FXML
+    private void onLogs() {
+
+        try {
+            Files.createDirectories(logsDirectory);
+        } catch (IOException e) {
+            log.warn("Cannot create log folder {}", logsDirectory, e);
+            return;
+        }
+
+        if (hostServices != null) {
+            hostServices.showDocument(logsDirectory.toUri().toString());
+        }
     }
 
     static String licenses() {

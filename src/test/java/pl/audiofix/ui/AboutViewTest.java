@@ -14,7 +14,9 @@ import javafx.scene.layout.Region;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -124,8 +126,33 @@ class AboutViewTest {
         assertFalse(lookup("licensesArea", TextArea.class).isEditable());
     }
 
+    // ---------------------------------------------------------------- log folder (#14)
+
+    @Test
+    void logsButtonExplainsWhatItOpens() {
+        Button logs = lookup("logsButton", Button.class);
+
+        assertEquals("Folder logów", logs.getText());
+        assertNotNull(logs.getTooltip());
+        assertNotNull(logs.getOnAction());
+    }
+
+    @Test
+    void logsButtonCreatesMissingFolder(@TempDir Path temp) throws Exception {
+        // right after installation nothing may have been logged yet; Explorer cannot open a missing folder
+        Path logs = temp.resolve("AudioFix").resolve("logs");
+
+        onFxThread(() -> {
+            controller.setLogsDirectory(logs);
+            lookup("logsButton", Button.class).fire();
+        });
+
+        assertTrue(Files.isDirectory(logs));
+    }
+
     @Test
     void buttonsAreNeverNarrowerThanTheirText() {
+        assertEquals(Region.USE_PREF_SIZE, lookup("logsButton", Button.class).getMinWidth());
         assertEquals(Region.USE_PREF_SIZE, lookup("copyButton", Button.class).getMinWidth());
         assertEquals(Region.USE_PREF_SIZE, lookup("closeButton", Button.class).getMinWidth());
     }
