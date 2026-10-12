@@ -4,10 +4,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.DialogPane;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -64,7 +64,9 @@ class ConversionTest {
     private Button cancelButton;
     private Button addFilesButton;
     private ProgressBar progressBar;
-    private TextArea logArea;
+    private Label progressStatus;
+    private Label progressPercent;
+    private ListView<String> logList;
     private TextField outputField;
     private ListView<?> queueList;
 
@@ -92,7 +94,9 @@ class ConversionTest {
             cancelButton = (Button) root.lookup("#cancelButton");
             addFilesButton = (Button) root.lookup("#addFilesButton");
             progressBar = (ProgressBar) root.lookup("#progressBar");
-            logArea = (TextArea) root.lookup("#logArea");
+            progressStatus = (Label) root.lookup("#progressStatusLabel");
+            progressPercent = (Label) root.lookup("#progressPercentLabel");
+            logList = (ListView<String>) root.lookup("#logList");
             outputField = (TextField) root.lookup("#outputField");
             queueList = (ListView<?>) root.lookup("#queueList");
 
@@ -150,10 +154,38 @@ class ConversionTest {
         onFxThread(startButton::fire);
         waitUntilFinished();
 
-        String log = logArea.getText();
+        String log = logText();
         assertTrue(log.contains("pcm_s24le"), "ffmpeg command not in log:\n" + log);
         assertTrue(log.contains("\"" + outputPath() + "\""), "output path with spaces should be quoted:\n" + log);
         assertTrue(log.contains("Stream mapping"), "ffmpeg stderr not in log:\n" + log);
+    }
+
+    @Test
+    void finishedConversionSaysDone() throws Exception {
+        onFxThread(startButton::fire);
+        waitUntilFinished();
+
+        assertEquals("Gotowe", progressStatus.getText());
+        assertEquals("", progressPercent.getText());
+        assertTrue(logList.getItems().getLast().startsWith("Gotowe: "), logText());
+    }
+
+    @Test
+    void consoleMarksCommandLine() throws Exception {
+        onFxThread(startButton::fire);
+        waitUntilFinished();
+
+        assertTrue(logList.getItems().stream().anyMatch(line -> LogLines.kind(line) == LogLines.Kind.COMMAND),
+                "the ffmpeg command should be shown as a command:" + System.lineSeparator() + logText());
+    }
+
+    @Test
+    void logStartsWithAppAndFfmpegVersion() throws Exception {
+        // the version is read in the background after setFfmpegPaths; the next added file has it
+        waitUntil(() -> {
+            controller.addMedia(new MediaInfo(dir.resolve("again.mkv"), 1, List.of()));
+            return logList.getItems().getFirst().contains("| ffmpeg ");
+        }, "ffmpeg version never reached the log");
     }
 
     // ---------------------------------------------------------------- UI state
@@ -368,7 +400,7 @@ class ConversionTest {
         onFxThread(quickConvertButton::fire);
         waitUntilFinished();
 
-        String log = logArea.getText();
+        String log = logText();
         assertTrue(log.contains("-c:a pcm_s24le"), "quick command not in log:" + System.lineSeparator() + log);
         assertFalse(log.contains("-map "), "quick command must not map streams:" + System.lineSeparator() + log);
     }
@@ -442,5 +474,10 @@ class ConversionTest {
             Thread.sleep(50);
         }
         throw new AssertionError(message);
+    }
+
+    /** The console's lines as one text. */
+    private String logText() {
+        return String.join(System.lineSeparator(), logList.getItems());
     }
 }

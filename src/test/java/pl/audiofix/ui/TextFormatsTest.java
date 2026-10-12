@@ -89,6 +89,28 @@ class TextFormatsTest {
         assertEquals("", TextFormats.fileInfo(media(0, null)), "no empty brackets");
     }
 
+    // ---------------------------------------------------------------- duration (#46)
+
+    @ParameterizedTest(name = "{0} s -> {1}")
+    @CsvSource({
+            "0,     00:00",
+            "59,    00:59",
+            "135,   02:15",
+            "3599,  59:59",
+            "3600,  1:00:00",
+            "3725,  1:02:05",
+            "36000, 10:00:00",
+    })
+    void durationIsMinutesAndSecondsOrHours(long seconds, String expected) {
+        assertEquals(expected, TextFormats.duration(java.time.Duration.ofSeconds(seconds)));
+    }
+
+    @Test
+    void durationIsRoundedToWholeSeconds() {
+        assertEquals("01:00", TextFormats.duration(java.time.Duration.ofMillis(59_600)));
+        assertEquals("00:59", TextFormats.duration(java.time.Duration.ofMillis(59_400)));
+    }
+
     private static MediaInfo media(long size, String formatName) {
         return new MediaInfo(Path.of("Drive.mkv"), 60, List.of(), size, formatName);
     }

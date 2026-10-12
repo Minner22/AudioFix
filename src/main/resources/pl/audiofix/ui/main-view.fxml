@@ -103,9 +103,16 @@
                     </tooltip>
                 </Button>
                 <Button fx:id="cancelButton" text="Anuluj" minWidth="-Infinity" onAction="#onCancel"/>
-                <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                <VBox HBox.hgrow="ALWAYS" spacing="3" styleClass="progress-info">
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label fx:id="progressStatusLabel" styleClass="progress-status"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="progressPercentLabel" styleClass="progress-percent" minWidth="-Infinity"/>
+                    </HBox>
+                    <ProgressBar fx:id="progressBar" progress="0" maxWidth="Infinity"/>
+                </VBox>
             </HBox>
-            <TextArea fx:id="logArea" styleClass="console" editable="false" prefRowCount="6"/>
+            <ListView fx:id="logList" styleClass="console" minHeight="96" prefHeight="96"/>
         </VBox>
     </bottom>
 </BorderPane>

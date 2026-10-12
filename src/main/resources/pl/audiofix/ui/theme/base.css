@@ -637,17 +637,79 @@
 
 /* ------------------------------------------------------------------ progress bar */
 
+/* flat: 1px border around a muted track, one solid fill */
 .progress-bar > .track {
-    -fx-background-color: -af-track;
-    -fx-background-insets: 0;
-    -fx-background-radius: 2;
+    -fx-background-color: -af-border, -af-surface-muted;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 2, 1;
 }
 
 .progress-bar > .bar {
     -fx-background-color: -af-accent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 2;
+    -fx-background-insets: 1;
+    -fx-background-radius: 1;
     -fx-padding: 3;
+}
+
+.progress-bar:converting > .bar {
+    -fx-background-color: -af-convert;
+}
+
+.progress-status {
+    -fx-font-size: 11px;
+    -fx-text-fill: -af-heading;
+}
+
+.progress-percent {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -af-selection-text;
+}
+
+/* ------------------------------------------------------------------ log console (#46): dark in both themes */
+
+.console {
+    -fx-background-color: -af-console-border, -af-console-bg;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 3, 2;
+    -fx-padding: 5 1 5 1;
+}
+
+.console .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -af-console-text;
+    -fx-font-size: 11px;
+    -fx-padding: 0 8 0 8;
+    -fx-cell-size: 15px;
+}
+
+.console .list-cell:filled:hover {
+    -fx-background-color: transparent;
+}
+
+.console .list-cell:filled:selected {
+    -fx-background-color: -af-console-selection;
+    -fx-text-fill: -af-console-text;
+}
+
+.console .log-version {
+    -fx-text-fill: -af-console-muted;
+}
+
+.console .log-command {
+    -fx-text-fill: -af-console-command;
+}
+
+.console .log-warning {
+    -fx-text-fill: -af-console-warning;
+}
+
+.console .log-error {
+    -fx-text-fill: -af-console-error;
+}
+
+.console .log-success {
+    -fx-text-fill: -af-console-success;
 }
 
 /* ------------------------------------------------------------------ popups: tooltip, context menu, dialogs */

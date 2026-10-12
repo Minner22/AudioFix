@@ -45,6 +45,16 @@
     -af-type-audio: #0d9488;
     -af-type-subtitle: #8b5cf6;
 
+    -af-console-bg: #1e1e1e;
+    -af-console-border: #3e3e3e;
+    -af-console-text: #cccccc;
+    -af-console-muted: #888888;
+    -af-console-command: #4ec9b0;
+    -af-console-warning: #fbbf24;
+    -af-console-error: #f87171;
+    -af-console-success: #34d399;
+    -af-console-selection: #264f78;
+
     -af-tooltip-bg: #0f172a;
     -af-tooltip-text: #f8fafc;
 
