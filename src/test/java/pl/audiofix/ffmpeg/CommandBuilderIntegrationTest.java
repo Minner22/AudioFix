@@ -82,9 +82,9 @@ class CommandBuilderIntegrationTest {
 
     @Test
     void quickCommandKeepsOneConvertedAudioTrack() throws Exception {
-        // the sample has DTS (2 ch, default) and AC3 (1 ch) - ffmpeg picks the one with more channels
+        // the sample has DTS (2 ch, default) and AC3 (1 ch) - ffmpeg picks the default one
         Path output = dir.resolve("quick.mkv");
-        List<String> args = builder.buildQuick(paths.ffmpeg(), sample.path(), output);
+        List<String> args = builder.buildQuick(paths.ffmpeg(), sample, output);
 
         MediaInfo result = runCommand(args, output);
 
@@ -93,6 +93,59 @@ class CommandBuilderIntegrationTest {
         assertEquals("pcm_s24le", result.streams().get(1).codec());
         assertEquals(2, result.streams().get(1).channels());
         assertEquals("ass", result.streams().get(2).codec(), "text subtitles are converted to ASS by default");
+        assertEquals("PCM ąę", result.streams().get(1).title(), "the converted track gets a PCM title (#69)");
+    }
+
+    @Test
+    void predictedQuickTrackIsTheOneFfmpegTakes() throws Exception {
+        // the title is computed from the track AudioFix expects ffmpeg to take; if a newer ffmpeg chooses
+        // differently, the title would name another track - this test catches that
+        MediaInfo media = probe.probe(twoAudioTracks(dir.resolve("stereo-default.mkv"), 0));
+        StreamInfo predicted = CommandBuilder.autoSelectedAudio(media.streams()).orElseThrow();
+        Path output = dir.resolve("quick-default.mkv");
+
+        MediaInfo result = runCommand(builder.buildQuick(paths.ffmpeg(), media, output), output);
+
+        StreamInfo taken = result.streams().stream().filter(StreamInfo::isAudio).findFirst().orElseThrow();
+        assertEquals(2, predicted.channels(), "the default stereo track, not the 5.1 one");
+        assertEquals(predicted.channels(), taken.channels());
+        assertEquals("PCM 2.0", taken.title());
+    }
+
+    @Test
+    void withoutDefaultFfmpegTakesMostChannels() throws Exception {
+        MediaInfo media = probe.probe(twoAudioTracks(dir.resolve("no-default.mkv"), -1));
+        StreamInfo predicted = CommandBuilder.autoSelectedAudio(media.streams()).orElseThrow();
+        Path output = dir.resolve("quick-no-default.mkv");
+
+        MediaInfo result = runCommand(builder.buildQuick(paths.ffmpeg(), media, output), output);
+
+        StreamInfo taken = result.streams().stream().filter(StreamInfo::isAudio).findFirst().orElseThrow();
+        assertEquals(6, predicted.channels());
+        assertEquals(predicted.channels(), taken.channels());
+        assertEquals("PCM 5.1", taken.title());
+    }
+
+    /**
+     * Stereo AC3 "AC3 2.0" and 5.1 AC3 "AC3 5.1" without video; the track with the given index is default,
+     * -1 means none is.
+     */
+    private static Path twoAudioTracks(Path file, int defaultTrack) throws Exception {
+        Process p = new ProcessBuilder(
+                paths.ffmpeg().toString(), "-v", "error", "-y",
+                "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+                "-f", "lavfi", "-i", "anullsrc=channel_layout=5.1:sample_rate=48000",
+                "-t", "1", "-map", "0", "-map", "1", "-c:a", "ac3",
+                "-metadata:s:a:0", "title=AC3 2.0", "-metadata:s:a:1", "title=AC3 5.1",
+                "-disposition:a:0", defaultTrack == 0 ? "default" : "0",
+                "-disposition:a:1", defaultTrack == 1 ? "default" : "0",
+                "-default_mode", "passthrough",   // otherwise the muxer marks the first track default anyway
+                file.toString())
+                .inheritIO()
+                .start();
+        assertTrue(p.waitFor(60, TimeUnit.SECONDS), "ffmpeg timed out");
+        assertEquals(0, p.exitValue(), "ffmpeg could not create " + file);
+        return file;
     }
 
     @Test

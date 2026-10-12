@@ -12,6 +12,7 @@ import pl.audiofix.model.TrackPlan;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -347,10 +348,69 @@ class CommandBuilderTest {
     }
 
     @Test
-    void quickCommandDoesNotChangeTitles() {
-        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+    void quickCommandRenamesTheTrackFfmpegPicks() {
+        // #69: the converted track kept "TrueHD Atmos 7.1" although it is PCM now
+        List<String> args = builder.buildQuick(FFMPEG, media(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")), OUTPUT);
 
-        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata") || a.startsWith("-ac")));
+        assertTrue(containsSequence(args, "-metadata:s:a:0", "title=PCM 7.1"), args.toString());
+    }
+
+    @Test
+    void quickCommandKeepsTitleWithoutFormatName() {
+        // nothing to rename in "Komentarz reżysera"; ffmpeg copies it as it is
+        List<String> args = builder.buildQuick(FFMPEG, media(audio(1, "dts", 6, "5.1", "Komentarz reżysera")), OUTPUT);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata")), args.toString());
+    }
+
+    @Test
+    void quickCommandWithoutAudioHasNoTitle() {
+        List<String> args = builder.buildQuick(FFMPEG, media(), OUTPUT);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-metadata")), args.toString());
+    }
+
+    @Test
+    void quickCommandDoesNotDownmix() {
+        // PCM takes any number of channels; -ac belongs to AC3 / E-AC3 in a planned conversion
+        List<String> args = builder.buildQuick(FFMPEG, media(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")), OUTPUT);
+
+        assertTrue(args.stream().noneMatch(a -> a.startsWith("-ac")), args.toString());
+    }
+
+    // ---------------------------------------------------------------- ffmpeg's own audio choice (#69)
+
+    @Test
+    void defaultTrackWinsOverMoreChannels() {
+        // checked on ffmpeg 7.0.1: a default stereo track is taken before a 7.1 one
+        StreamInfo stereo = new StreamInfo(1, StreamType.AUDIO, "ac3", null, 2, "stereo", "pol", null, true);
+        StreamInfo sevenOne = new StreamInfo(2, StreamType.AUDIO, "truehd", null, 8, "7.1", "eng", null, false);
+
+        assertEquals(Optional.of(stereo), CommandBuilder.autoSelectedAudio(List.of(stereo, sevenOne)));
+    }
+
+    @Test
+    void withoutDefaultMostChannelsWin() {
+        StreamInfo stereo = new StreamInfo(1, StreamType.AUDIO, "ac3", null, 2, "stereo", "pol", null, false);
+        StreamInfo sevenOne = new StreamInfo(2, StreamType.AUDIO, "truehd", null, 8, "7.1", "eng", null, false);
+
+        assertEquals(Optional.of(sevenOne), CommandBuilder.autoSelectedAudio(List.of(stereo, sevenOne)));
+    }
+
+    @Test
+    void firstOfEqualTracksWins() {
+        StreamInfo first = new StreamInfo(1, StreamType.AUDIO, "dts", null, 6, "5.1", "eng", null, true);
+        StreamInfo second = new StreamInfo(2, StreamType.AUDIO, "ac3", null, 6, "5.1", "pol", null, true);
+
+        assertEquals(Optional.of(first), CommandBuilder.autoSelectedAudio(List.of(first, second)));
+    }
+
+    @Test
+    void onlyAudioCounts() {
+        StreamInfo video = new StreamInfo(0, StreamType.VIDEO, "hevc", null, 0, null, "und", null, true);
+        StreamInfo subtitles = new StreamInfo(2, StreamType.SUBTITLE, "subrip", null, 0, null, "pol", null, true);
+
+        assertEquals(Optional.empty(), CommandBuilder.autoSelectedAudio(List.of(video, subtitles)));
     }
 
     // ---------------------------------------------------------------- queued job (#12)
@@ -366,9 +426,10 @@ class CommandBuilderTest {
 
     @Test
     void quickJobUsesQuickCommand() {
-        ConversionJob job = new ConversionJob(new MediaInfo(INPUT, 60, List.of()), typicalPlans(), OUTPUT, ConversionMode.QUICK);
+        MediaInfo media = media(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1"));
+        ConversionJob job = new ConversionJob(media, typicalPlans(), OUTPUT, ConversionMode.QUICK);
 
-        assertEquals(builder.buildQuick(FFMPEG, INPUT, OUTPUT), builder.build(FFMPEG, job));
+        assertEquals(builder.buildQuick(FFMPEG, media, OUTPUT), builder.build(FFMPEG, job));
     }
 
     @Test
@@ -383,14 +444,15 @@ class CommandBuilderTest {
     // ---------------------------------------------------------------- buildQuick (#21)
 
     @Test
-    void quickCommandIsTheOldManualCommand() {
-        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+    void quickCommandIsTheOldManualCommandWithNewTitle() {
+        List<String> args = builder.buildQuick(FFMPEG, media(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")), OUTPUT);
 
         assertEquals(List.of(
                 FFMPEG.toString(), "-hide_banner", "-y",
                 "-i", INPUT.toString(),
                 "-c:v", "copy",
                 "-c:a", "pcm_s24le",
+                "-metadata:s:a:0", "title=PCM 7.1",
                 "-progress", "pipe:1", "-nostats",
                 OUTPUT.toString()), args);
     }
@@ -398,7 +460,7 @@ class CommandBuilderTest {
     @Test
     void quickCommandLetsFfmpegChooseStreams() {
         // no -map: ffmpeg's own stream selection, exactly like the command used before AudioFix
-        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+        List<String> args = builder.buildQuick(FFMPEG, media(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")), OUTPUT);
 
         assertFalse(args.contains("-map"));
         assertFalse(args.contains("-map_chapters"));
@@ -407,7 +469,7 @@ class CommandBuilderTest {
 
     @Test
     void quickCommandKeepsPathsWithSpacesAsSingleArguments() {
-        List<String> args = builder.buildQuick(FFMPEG, INPUT, OUTPUT);
+        List<String> args = builder.buildQuick(FFMPEG, media(), OUTPUT);
 
         assertTrue(args.contains(INPUT.toString()));
         assertEquals(OUTPUT.toString(), args.getLast());
@@ -453,6 +515,13 @@ class CommandBuilderTest {
                 TrackPlan.defaultsFor(audio(1, "truehd", 8, "7.1", "TrueHD Atmos 7.1")));
         plans.get(1).setTargetCodec(codec);
         return plans;
+    }
+
+    /** INPUT with a video stream and the given streams after it. */
+    private static MediaInfo media(StreamInfo... streams) {
+        List<StreamInfo> all = new java.util.ArrayList<>(List.of(stream(0, StreamType.VIDEO, "hevc", true)));
+        all.addAll(List.of(streams));
+        return new MediaInfo(INPUT, 60, all);
     }
 
     private static StreamInfo audio(int index, String codec, int channels, String layout, String title) {

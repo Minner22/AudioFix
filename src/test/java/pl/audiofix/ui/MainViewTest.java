@@ -109,6 +109,8 @@ class MainViewTest {
 
         assertNotNull(quick.getTooltip(), "quick conversion should have a tooltip");
         assertTrue(quick.getTooltip().getText().contains("PCM"), quick.getTooltip().getText());
+        // ffmpeg takes the default audio track first, not the one with the most channels (#69)
+        assertTrue(quick.getTooltip().getText().contains("domyślna"), quick.getTooltip().getText());
     }
 
     @Test
