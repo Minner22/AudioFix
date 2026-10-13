@@ -27,19 +27,7 @@ jobs:
           cache: maven
 
       - name: Install ffmpeg 7.0.1
-        shell: pwsh
-        run: |
-          $url = "https://github.com/GyanD/codexffmpeg/releases/download/7.0.1/ffmpeg-7.0.1-essentials_build.zip"
-          $expected = "39126817bc9ddad04515cd69e22398d1844ea4a0eed01d909e0ae364dec2988c"
-          
-          Invoke-WebRequest $url -OutFile ffmpeg.zip
-          $actual = (Get-FileHash ffmpeg.zip -Algorithm SHA256).Hash.ToLower()
-          if ($actual -ne $expected) { throw "ffmpeg.zip checksum mismatch: $actual" }
-          
-          Expand-Archive ffmpeg.zip -DestinationPath "$env:RUNNER_TEMP\ffmpeg"
-          $bin = "$env:RUNNER_TEMP\ffmpeg\ffmpeg-7.0.1-essentials_build\bin"
-          Add-Content -Path $env:GITHUB_PATH -Value $bin
-          & "$bin\ffmpeg.exe" -version | Select-Object -First 1
+        uses: ./.github/actions/install-ffmpeg
 
       - name: Build and test
         run: mvn -B -ntp verify

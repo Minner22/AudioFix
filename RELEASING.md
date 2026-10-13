@@ -56,22 +56,45 @@ mvn versions:set "-DnewVersion=0.3.0-SNAPSHOT" "-DgenerateBackupPoms=false"
 git add pom.xml
 git commit -m "Prepare 0.3.0-SNAPSHOT"
 
-# 4. Wypchnięcie commitów i tagu
+# 4. Wypchnięcie commitów i tagu: tag uruchamia automatyczne wydanie
 git push origin master --follow-tags
-
-# 5. Wydanie na GitHubie z automatycznymi notatkami
-gh release create v0.2.0 --title "AudioFix 0.2.0" --generate-notes
 ```
+
+Po kilku minutach (testy i instalator to ok. 10 minut) wydanie jest na stronie *Releases*, a postęp widać
+w zakładce *Actions* → *Release*.
 
 Sprawdzenie:
 
 ```powershell
+gh run list --workflow release.yml --limit 1   # status automatycznego wydania
 gh release list
 git show v0.2.0:pom.xml | Select-String "<version>" | Select-Object -First 1   # 0.2.0
 Select-String "<version>" pom.xml | Select-Object -First 1                      # 0.3.0-SNAPSHOT
 ```
 
-Krok 5 zniknie, gdy będzie działać automatyczne wydanie po tagu (#40).
+## Automatyczne wydanie (#40)
+
+Workflow `.github/workflows/release.yml` po wypchnięciu tagu `v*`:
+
+1. sprawdza, czy tag zgadza się z wersją w `pom.xml` (tag `v0.2.0` wymaga `<version>0.2.0</version>`,
+   wersja `-SNAPSHOT` nie przechodzi): przy niezgodności kończy się błędem i niczego nie publikuje,
+2. uruchamia testy i buduje instalator z dołączonym ffmpeg (`mvn -Pinstaller verify`),
+3. tworzy wydanie `AudioFix <wersja>` z notatkami (`--generate-notes`), instalatorem `AudioFix-<wersja>.exe`
+   i jego sumą `AudioFix-<wersja>.exe.sha256`.
+
+Tag z `-rc`, `-beta` albo `-alpha` (np. `v1.0.0-rc1`, wersja w `pom.xml`: `1.0.0-rc1`) daje wydanie oznaczone jako
+*pre-release*: można je pobrać i przetestować, ale nie jest pokazywane jako najnowsze.
+
+**Gdy workflow się nie powiedzie,** wydanie nie powstaje. Po poprawce (np. PR do `master`) tag trzeba przestawić
+i wypchnąć ponownie:
+
+```powershell
+git tag -d v0.2.0
+git push origin :refs/tags/v0.2.0
+# poprawka, commit wydania, potem znowu krok 2 i 4
+```
+PR, który zmienia proces wydań (`release.yml`, `.github/actions`, `src/installer`, `pom.xml`), uruchamia ten sam
+workflow bez publikowania. Gotowy instalator jest wtedy do pobrania z zakładki *Actions* (artefakt `installer`).
 
 ### Dlaczego commity wydania idą bezpośrednio na `master`
 
@@ -105,7 +128,6 @@ Gdy w wydanej wersji (np. `0.2.0`) jest błąd:
   mvn versions:set "-DnewVersion=0.2.1" "-DgenerateBackupPoms=false"
   git add pom.xml; git commit -m "Release 0.2.1"
   git tag -a v0.2.1 -m "AudioFix 0.2.1"
-  git push origin release/0.2 --follow-tags
-  gh release create v0.2.1 --title "AudioFix 0.2.1" --generate-notes --target release/0.2
+  git push origin release/0.2 --follow-tags   # tag v0.2.1 uruchamia wydanie
   ```
   Poprawkę trzeba potem przenieść też na `master` (PR z cherry-pickiem).
