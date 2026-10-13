@@ -16,78 +16,32 @@ public class FfmpegLocator {
     private static final Logger log = LoggerFactory.getLogger(FfmpegLocator.class);
 
     static final String FFMPEG_EXE = "ffmpeg.exe";
+    public static final String BUNDLED_FOLDER = "ffmpeg";
+    static final String APP_PATH_PROPERTY = "jpackage.app-path";
     private static final Duration VERSION_CHECK_TIMEOUT = Duration.ofSeconds(5);
     private static final String PREF_KEY = "ffmpegPath";
 
     private final Preferences preferences;
+    private final Path bundledFolder;
     private final String pathEnv;
 
     public FfmpegLocator() {
 
-        this(Preferences.userNodeForPackage(FfmpegLocator.class), System.getenv("PATH"));
+        this(Preferences.userNodeForPackage(FfmpegLocator.class),
+                bundledFolder(System.getProperty(APP_PATH_PROPERTY)).orElse(null),
+                System.getenv("PATH"));
     }
 
     FfmpegLocator(Preferences preferences, String pathEnv) {
 
-        this.preferences = preferences;
-        this.pathEnv = pathEnv;
+        this(preferences, null, pathEnv);
     }
 
-    public Optional<FfmpegPaths> locate() {
+    FfmpegLocator(Preferences preferences,Path bundledFolder,  String pathEnv) {
 
-        String preferencePath = preferences.get(PREF_KEY, null);
-
-        if (preferencePath != null) {
-
-            try {
-                Path ffmpegPath = Path.of(preferencePath);
-
-                FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
-
-                if (isComplete(paths)) {
-
-                    log.info("Using saved ffmpeg: {}", paths.ffmpeg());
-                    return Optional.of(paths);
-                }
-                log.warn("Saved ffmpeg is missing or incomplete, clearing: {}", preferencePath);
-            } catch (InvalidPathException _) {
-
-                log.warn("Invalid saved ffmpeg path, clearing: {}", preferencePath);
-            }
-
-            preferences.remove(PREF_KEY);
-        }
-
-        if (pathEnv == null) {
-
-            return Optional.empty();
-        }
-
-        for (String path : pathEnv.split(File.pathSeparator)) {
-
-            String pathCleaned = path.trim().replace("\"", "");
-
-            if (pathCleaned.isEmpty()) {
-                continue;
-            }
-
-            try {
-                Path ffmpegPath = Path.of(pathCleaned, FFMPEG_EXE);
-
-                FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
-                if (isComplete(paths)) {
-
-                    log.info("Using ffmpeg from PATH: {}", paths.ffmpeg());
-                    return Optional.of(paths);
-                }
-            } catch (InvalidPathException _) {
-
-                log.debug("Skipping invalid PATH entry: {}", pathCleaned);
-            }
-        }
-
-        log.info("ffmpeg not found in preferences or PATH");
-        return Optional.empty();
+        this.preferences = preferences;
+        this.bundledFolder = bundledFolder;
+        this.pathEnv = pathEnv;
     }
 
     public FfmpegPaths save(Path ffmpegPath) {
@@ -115,6 +69,106 @@ public class FfmpegLocator {
     boolean ffmpegVersionCheckOk(Path ffmpegPath) {
 
         return FfmpegVersion.firstLine(ffmpegPath, VERSION_CHECK_TIMEOUT).isPresent();
+    }
+
+    static Optional<Path> bundledFolder(String appPath) {
+
+        if (appPath == null || appPath.isBlank()) {
+            return Optional.empty();
+        }
+
+        try {
+            Path installation = Path.of(appPath).getParent();
+
+            return installation == null
+                    ? Optional.empty()
+                    : Optional.of(installation.resolve("app").resolve(BUNDLED_FOLDER));
+        } catch (InvalidPathException _) {
+            return  Optional.empty();
+        }
+    }
+
+    public Optional<FfmpegPaths> locate() {
+
+        Optional<FfmpegPaths> found = saved().or(this::bundled).or(this::fromPathEnv);
+        if (found.isEmpty()) {
+            log.info("ffmpeg not found in preferences, the installation or PATH");
+        }
+
+        return found;
+    }
+
+    private Optional<FfmpegPaths> saved() {
+
+        String preferencePath = preferences.get(PREF_KEY, null);
+        if (preferencePath == null) {
+            return Optional.empty();
+        }
+
+        try {
+            FfmpegPaths paths = FfmpegPaths.fromFfmpeg(Path.of(preferencePath));
+
+            if (isComplete(paths)) {
+
+                log.info("Using saved ffmpeg: {}", paths.ffmpeg());
+                return Optional.of(paths);
+            }
+            log.warn("Saved ffmpeg is missing or incomplete, clearing: {}", preferencePath);
+        } catch (InvalidPathException _) {
+            log.warn("Invalid saved ffmpeg path, clearing {}", preferencePath);
+        }
+
+        preferences.remove(PREF_KEY);
+
+        return Optional.empty();
+    }
+
+    private Optional<FfmpegPaths> bundled() {
+
+        if (bundledFolder == null) {
+            return Optional.empty();
+        }
+
+        FfmpegPaths paths = FfmpegPaths.fromFfmpeg(bundledFolder.resolve(FFMPEG_EXE));
+        if (isComplete(paths)) {
+            log.info("Using bundled ffmpeg: {}", paths.ffmpeg());
+            return Optional.of(paths);
+        }
+
+        log.warn("Bundled ffmpeg is missing or incomplete: {}", bundledFolder);
+
+        return Optional.empty();
+    }
+
+    private Optional<FfmpegPaths> fromPathEnv() {
+
+        if (pathEnv == null) {
+            return Optional.empty();
+        }
+
+        for (String path : pathEnv.split(File.pathSeparator)) {
+            String pathCleaned = path.trim().replace("\"", "");
+
+            if (pathCleaned.isEmpty()) {
+                continue;
+            }
+
+            try {
+                Path ffmpegPath = Path.of(pathCleaned, FFMPEG_EXE);
+
+                FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
+                if (isComplete(paths)) {
+
+                    log.info("Using ffmpeg from PATH: {}", paths.ffmpeg());
+                    return Optional.of(paths);
+                }
+            } catch (InvalidPathException _) {
+
+                log.debug("Skipping invalid PATH entry: {}", pathCleaned);
+            }
+        }
+
+        return Optional.empty();
     }
 
     private static boolean isComplete(FfmpegPaths paths) {

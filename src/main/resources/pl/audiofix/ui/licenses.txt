@@ -48,5 +48,7 @@ JetBrains Mono (font)
   https://github.com/JetBrains/JetBrainsMono
 
 FFmpeg
-  Uruchamiany jako osobny program. GNU LGPL 2.1+ albo GNU GPL, zależnie od builda.
-  https://ffmpeg.org
+  Instalator zawiera FFmpeg w wersji podanej wyżej, build LGPL z https://github.com/BtbN/FFmpeg-Builds
+  (licencja GNU LGPL 3.0, plik app\ffmpeg\LICENSE.txt w folderze instalacji). AudioFix uruchamia go
+  jako osobny program i nie zmienia go. Kod źródłowy: https://ffmpeg.org/download.html
+  Wskazany samodzielnie ffmpeg ma licencję swojego builda (LGPL albo GPL).

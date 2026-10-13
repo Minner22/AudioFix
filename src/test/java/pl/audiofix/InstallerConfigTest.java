@@ -95,6 +95,49 @@ class InstallerConfigTest {
         assertTrue(pom.contains("--include-locales=pl,en"), "only Polish and English locale data, the rest is 30 MB");
     }
 
+    // ---------------------------------------------------------------- shipped ffmpeg (#24)
+
+    @Test
+    void shippedFfmpegIsPinnedAndChecked() throws IOException {
+        // "latest" changes every day; a fixed month-end build with its checksum gives the same installer every time
+        String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
+
+        assertTrue(Pattern.compile("<ffmpeg\\.release>autobuild-\\d{4}-\\d{2}-\\d{2}-\\d{2}-\\d{2}</ffmpeg\\.release>").matcher(pom).find(),
+                "ffmpeg must come from a dated release, not latest");
+        assertTrue(Pattern.compile("<ffmpeg\\.sha256>[0-9a-f]{64}</ffmpeg\\.sha256>").matcher(pom).find(), "no checksum");
+        assertTrue(pom.contains("<sha256>${ffmpeg.sha256}</sha256>"), "the checksum is not checked by the download");
+    }
+
+    @Test
+    void shippedFfmpegIsLgpl() throws IOException {
+        // a GPL build would put GPL obligations on the whole installer
+        Matcher name = Pattern.compile("<ffmpeg\\.name>([^<]+)</ffmpeg\\.name>")
+                .matcher(Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8));
+
+        assertTrue(name.find());
+        assertTrue(name.group(1).contains("-win64-lgpl-"), name.group(1));
+    }
+
+    @Test
+    void shippedFfmpegLandsWhereLocatorLooks() throws IOException {
+        // <installation>\app is jpackage's --input folder; FfmpegLocator looks in its ffmpeg subfolder
+        String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
+
+        assertTrue(pom.contains("<outputDirectory>${installer.input}/" + pl.audiofix.ffmpeg.FfmpegLocator.BUNDLED_FOLDER + "</outputDirectory>"),
+                "ffmpeg is copied somewhere else than FfmpegLocator looks");
+    }
+
+    @Test
+    void shippedFfmpegHasLicenseAndNoPlayer() throws IOException {
+        String pom = Files.readString(Path.of("pom.xml"), StandardCharsets.UTF_8);
+        String copy = pom.substring(pom.indexOf("<id>installer-ffmpeg</id>"), pom.indexOf("<id>installer-jpackage</id>"));
+
+        assertTrue(copy.contains("<include>ffmpeg.exe</include>") && copy.contains("<include>ffprobe.exe</include>"));
+        assertTrue(copy.contains("<include>*.dll</include>"), "the shared build needs its libraries");
+        assertTrue(copy.contains("<include>LICENSE.txt</include>"), "LGPL: the license goes with the binaries");
+        assertFalse(copy.contains("<include>ffplay") || copy.contains("<include>*.exe</include>"), "the player is not needed, 18 MB");
+    }
+
     @Test
     void installerStartsTheLauncher() throws IOException {
         // Launcher sets the log folder before the first logger and works around JavaFX on the classpath
