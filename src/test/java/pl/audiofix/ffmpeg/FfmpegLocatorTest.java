@@ -151,6 +151,74 @@ class FfmpegLocatorTest {
 
     // ---------------------------------------------------------------- save
 
+    // ---------------------------------------------------------------- locate: shipped with the installer (#24)
+
+    @Test
+    void bundledFfmpegIsUsedWhenNothingIsSaved() throws IOException {
+        Path bundled = ffmpegDir("bundled", true);
+        Path onPath = ffmpegDir("onPath", true);
+
+        Optional<FfmpegPaths> result = new FfmpegLocator(prefs, bundled, onPath.toString()).locate();
+
+        assertEquals(Optional.of(paths(bundled)), result, "the shipped copy goes before PATH");
+    }
+
+    @Test
+    void savedPathWinsOverBundledFfmpeg() throws IOException {
+        // the user chose e.g. a newer ffmpeg on purpose
+        Path saved = ffmpegDir("saved", true);
+        Path bundled = ffmpegDir("bundled", true);
+        prefs.put(PREF_KEY, saved.resolve("ffmpeg.exe").toString());
+
+        Optional<FfmpegPaths> result = new FfmpegLocator(prefs, bundled, null).locate();
+
+        assertEquals(Optional.of(paths(saved)), result);
+    }
+
+    @Test
+    void incompleteBundledFfmpegFallsBackToPath() throws IOException {
+        Path bundled = ffmpegDir("bundled", false);   // ffprobe.exe missing, e.g. removed by an antivirus
+        Path onPath = ffmpegDir("onPath", true);
+
+        Optional<FfmpegPaths> result = new FfmpegLocator(prefs, bundled, onPath.toString()).locate();
+
+        assertEquals(Optional.of(paths(onPath)), result);
+    }
+
+    @Test
+    void missingBundledFolderFallsBackToPath() throws IOException {
+        Path onPath = ffmpegDir("onPath", true);
+
+        Optional<FfmpegPaths> result = new FfmpegLocator(prefs, tempDir.resolve("no-such-folder"), onPath.toString()).locate();
+
+        assertEquals(Optional.of(paths(onPath)), result);
+    }
+
+    @Test
+    void bundledFfmpegIsNeverSaved() throws IOException {
+        // saving it would pin this installation's path; a later version may install elsewhere
+        new FfmpegLocator(prefs, ffmpegDir("bundled", true), null).locate();
+
+        assertNull(prefs.get(PREF_KEY, null));
+    }
+
+    @Test
+    void bundledFolderIsNextToAppJars() {
+        Path folder = FfmpegLocator.bundledFolder("C:\\Users\\Jan\\AppData\\Local\\AudioFix\\AudioFix.exe").orElseThrow();
+
+        assertEquals(Path.of("C:\\Users\\Jan\\AppData\\Local\\AudioFix", "app", "ffmpeg"), folder);
+    }
+
+    @Test
+    void withoutInstalledExeThereIsNoBundledFolder() {
+        // started from the IDE or with mvn javafx:run: jpackage.app-path is not set
+        assertEquals(Optional.empty(), FfmpegLocator.bundledFolder(null));
+        assertEquals(Optional.empty(), FfmpegLocator.bundledFolder(" "));
+        assertEquals(Optional.empty(), FfmpegLocator.bundledFolder("AudioFix.exe"), "no folder to look in");
+    }
+
+    // ---------------------------------------------------------------- save
+
     @Test
     void saveStoresAbsolutePathAndReturnsBothExecutables() throws IOException {
         Path dir = ffmpegDir("chosen", true);

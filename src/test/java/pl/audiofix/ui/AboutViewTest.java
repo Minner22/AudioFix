@@ -126,6 +126,16 @@ class AboutViewTest {
         assertFalse(lookup("licensesArea", TextArea.class).isEditable());
     }
 
+    @Test
+    void licensesSayWhichFfmpegIsShipped() {
+        // LGPL: the installer contains FFmpeg, so its license and the way to its source must be stated
+        String licenses = lookup("licensesArea", TextArea.class).getText();
+
+        assertTrue(licenses.contains("GNU LGPL 3.0"), "the BtbN LGPL builds are LGPL 3.0");
+        assertTrue(licenses.contains("https://ffmpeg.org/download.html"), "no link to the source code");
+        assertTrue(licenses.contains("BtbN/FFmpeg-Builds"), "no link to the build");
+    }
+
     // ---------------------------------------------------------------- log folder (#14)
 
     @Test

@@ -41,8 +41,9 @@ wybrać ścieżki i kliknąć **Start**.
 
 - JDK 25
 - Maven 3.9+
-- [ffmpeg](https://ffmpeg.org/download.html) (`ffmpeg.exe` i `ffprobe.exe`). Jeśli nie ma go w `PATH`,
-  aplikacja przy pierwszym uruchomieniu poprosi o wskazanie `ffmpeg.exe` i zapamięta tę lokalizację.
+- [ffmpeg](https://ffmpeg.org/download.html) (`ffmpeg.exe` i `ffprobe.exe`) do uruchamiania ze źródeł
+  (instalator ma własny). Jeśli nie ma go w `PATH`, aplikacja przy pierwszym uruchomieniu poprosi o wskazanie
+  `ffmpeg.exe` i zapamięta tę lokalizację.
 
 ## Uruchamianie
 
@@ -56,7 +57,13 @@ mvn test         # testy
 Instalator `AudioFix-<wersja>.exe` ma w sobie Javę, więc nie trzeba jej instalować. Instaluje się na koncie
 bieżącego użytkownika do `%LOCALAPPDATA%\AudioFix` (bez uprawnień administratora) i dodaje AudioFix do menu Start
 oraz skrót na pulpicie. Nowsza wersja instalatora zastępuje starszą, a odinstalowanie jest w
-*Ustawienia → Aplikacje*. ffmpeg nadal trzeba mieć osobno (patrz [Wymagania](#wymagania)).
+*Ustawienia → Aplikacje*. Instalator zawiera też `ffmpeg.exe` i `ffprobe.exe`, więc po instalacji AudioFix od razu konwertuje pliki.
+Ścieżka wskazana w [Ustawienia ffmpeg] nadal ma pierwszeństwo, np. dla nowszego ffmpeg.
+
+AudioFix zawiera [FFmpeg](https://ffmpeg.org) na licencji GNU LGPL 3.0: build *shared* z
+[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), wersja widoczna w oknie „O programie”,
+licencja w `app\ffmpeg\LICENSE.txt` w folderze instalacji, kod źródłowy na https://ffmpeg.org/download.html.
+AudioFix uruchamia ffmpeg jako osobny program i go nie modyfikuje.
 
 ### Budowanie instalatora
 
@@ -70,6 +77,8 @@ oraz skrót na pulpicie. Nowsza wersja instalatora zastępuje starszą, a odinst
   Wariant `app-image` działa bez WiX: folder można spakować do `.zip` i uruchamiać `AudioFix.exe` bez instalacji.
 - Dodaj `-DskipTests`, żeby nie czekać na testy.
 - Wbudowana Java zawiera tylko potrzebne moduły i dane lokalizacji dla polskiego i angielskiego.
+- ffmpeg jest pobierany przy budowaniu (ok. 80 MB, raz, potem z kopii w `~/.m2`) i sprawdzany sumą SHA-256.
+  Wersję zmienia się w `pom.xml` (`ffmpeg.release`, `ffmpeg.name`, `ffmpeg.sha256`).
 
 ### Logi
 
