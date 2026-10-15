@@ -47,7 +47,7 @@ class AboutViewTest {
     @BeforeEach
     void loadView() throws Exception {
         onFxThread(() -> {
-            FXMLLoader loader = new FXMLLoader(AboutController.class.getResource("about-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(AboutController.class.getResource("about-view.fxml"), Messages.bundle());
             root = loader.load();   // a typo in fx:id, onAction or fx:controller fails here
             controller = loader.getController();
             new Scene(root);

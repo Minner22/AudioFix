@@ -79,6 +79,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.6.0</version>
                 <configuration>
+                    <!-- tests compare Polish texts; the CI runner has an English Windows -->
+                    <argLine>-Duser.language=pl -Duser.country=PL</argLine>
                     <systemPropertyVariables>
                         <project.version>${project.version}</project.version>
                     </systemPropertyVariables>

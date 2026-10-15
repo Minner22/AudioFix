@@ -13,6 +13,7 @@ import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ui.AppIcon;
 import pl.audiofix.ui.FfmpegSetup;
 import pl.audiofix.ui.MainController;
+import pl.audiofix.ui.Messages;
 import pl.audiofix.ui.theme.Theme;
 import pl.audiofix.ui.theme.ThemeFonts;
 import pl.audiofix.ui.theme.ThemeManager;
@@ -50,7 +51,7 @@ public class AudioFixApp extends Application {
             return;
         }
 
-        FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"), Messages.bundle());
         Parent root = loader.load();
         controller = loader.getController();
         controller.setFfmpegPaths(ffmpegPaths.get());
