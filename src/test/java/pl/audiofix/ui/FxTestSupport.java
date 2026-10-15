@@ -69,9 +69,9 @@ public final class FxTestSupport {
         return result.get();
     }
 
-    /** Loads main-view.fxml; must be called on the JavaFX Application Thread. */
+    /** Loads main-view.fxml in the current language; must be called on the JavaFX Application Thread. */
     static FXMLLoader loadMainView() throws Exception {
-        FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"), Messages.bundle());
         Parent root = loader.load();
         Theme.apply(new Scene(root, 1100, 700));
         layout(root);

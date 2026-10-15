@@ -8,23 +8,23 @@
       fx:controller="pl.audiofix.ui.AboutController" spacing="10" prefWidth="520">
     <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
     <Label fx:id="appVersionLabel" styleClass="about-title"/>
-    <Label text="Poprawia ścieżki dźwiękowe w filmach, żeby dało się je odtworzyć na telewizorze." wrapText="true"/>
-    <Label fx:id="authorLabel" text="Autor: Minner22"/>
+    <Label text="%about.description" wrapText="true"/>
+    <Label fx:id="authorLabel" text="%about.author"/>
     <Hyperlink fx:id="repositoryLink" onAction="#onRepository"/>
     <Separator/>
     <Label fx:id="ffmpegLabel" wrapText="true"/>
     <Label fx:id="environmentLabel" wrapText="true"/>
     <Separator/>
-    <Label text="Licencje"/>
+    <Label text="%about.licenses"/>
     <TextArea fx:id="licensesArea" editable="false" wrapText="true" prefRowCount="10" VBox.vgrow="ALWAYS"/>
     <HBox spacing="8" alignment="CENTER_RIGHT">
-        <Button fx:id="logsButton" text="Folder logów" minWidth="-Infinity" onAction="#onLogs">
+        <Button fx:id="logsButton" text="%about.logs" minWidth="-Infinity" onAction="#onLogs">
             <tooltip>
-                <Tooltip text="Otwiera folder z plikami logów, np. do zgłoszenia błędu."/>
+                <Tooltip text="%about.logs.tooltip"/>
             </tooltip>
         </Button>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="copyButton" text="Kopiuj informacje" minWidth="-Infinity" onAction="#onCopy"/>
-        <Button fx:id="closeButton" text="Zamknij" minWidth="-Infinity" onAction="#onClose" cancelButton="true" defaultButton="true"/>
+        <Button fx:id="copyButton" text="%about.copy" minWidth="-Infinity" onAction="#onCopy"/>
+        <Button fx:id="closeButton" text="%about.close" minWidth="-Infinity" onAction="#onClose" cancelButton="true" defaultButton="true"/>
     </HBox>
 </VBox>
