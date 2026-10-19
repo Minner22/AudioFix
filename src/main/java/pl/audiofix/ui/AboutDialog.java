@@ -31,7 +31,7 @@ final class AboutDialog {
     
     static Stage show(Window owner, FfmpegPaths ffmpegPaths, HostServices hostServices) {
 
-        FXMLLoader loader = new FXMLLoader(AboutDialog.class.getResource("about-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(AboutDialog.class.getResource("about-view.fxml"), Messages.bundle());
         Parent root;
 
         try {

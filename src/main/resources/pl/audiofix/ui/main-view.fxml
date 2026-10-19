@@ -8,25 +8,25 @@
             fx:controller="pl.audiofix.ui.MainController" fx:id="rootPane" styleClass="drop-target">
     <top>
         <HBox fx:id="toolBar" styleClass="tool-bar" alignment="CENTER_LEFT">
-            <Button fx:id="addFilesButton" text="Dodaj pliki…" minWidth="-Infinity" onAction="#onAddFiles">
+            <Button fx:id="addFilesButton" text="%toolbar.addFiles" minWidth="-Infinity" onAction="#onAddFiles">
                 <graphic><Icon glyph="ADD"/></graphic>
             </Button>
-            <Button fx:id="ffmpegSettingsButton" text="Ustawienia ffmpeg" minWidth="-Infinity" onAction="#onFfmpegSettings">
+            <Button fx:id="ffmpegSettingsButton" text="%toolbar.ffmpegSettings" minWidth="-Infinity" onAction="#onFfmpegSettings">
                 <graphic><Icon glyph="SETTINGS"/></graphic>
             </Button>
             <Region HBox.hgrow="ALWAYS"/>
-            <MenuButton fx:id="themeButton" text="Motyw" minWidth="-Infinity">
+            <MenuButton fx:id="themeButton" text="%toolbar.theme" minWidth="-Infinity">
                 <graphic><Icon glyph="THEME"/></graphic>
                 <fx:define>
                     <ToggleGroup fx:id="themeGroup"/>
                 </fx:define>
                 <items>
-                    <RadioMenuItem fx:id="systemThemeItem" text="Systemowy" toggleGroup="$themeGroup"/>
-                    <RadioMenuItem fx:id="lightThemeItem" text="Jasny" toggleGroup="$themeGroup"/>
-                    <RadioMenuItem fx:id="darkThemeItem" text="Ciemny" toggleGroup="$themeGroup"/>
+                    <RadioMenuItem fx:id="systemThemeItem" text="%toolbar.theme.system" toggleGroup="$themeGroup"/>
+                    <RadioMenuItem fx:id="lightThemeItem" text="%toolbar.theme.light" toggleGroup="$themeGroup"/>
+                    <RadioMenuItem fx:id="darkThemeItem" text="%toolbar.theme.dark" toggleGroup="$themeGroup"/>
                 </items>
             </MenuButton>
-            <Button fx:id="aboutButton" text="O programie" minWidth="-Infinity" onAction="#onAbout">
+            <Button fx:id="aboutButton" text="%toolbar.about" minWidth="-Infinity" onAction="#onAbout">
                 <graphic><Icon glyph="ABOUT"/></graphic>
             </Button>
         </HBox>
@@ -35,27 +35,27 @@
         <SplitPane dividerPositions="0.25" styleClass="workspace">
             <VBox fx:id="queuePanel" styleClass="panel" minWidth="220" prefWidth="270" SplitPane.resizableWithParent="false">
                 <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="8">
-                    <Label fx:id="queueTitleLabel" text="Kolejka plików (0)" styleClass="section-header" minWidth="-Infinity"/>
+                    <Label fx:id="queueTitleLabel" styleClass="section-header" minWidth="-Infinity"/>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Label fx:id="queueRemainingLabel" text="Pozostało: 0" styleClass="panel-note" minWidth="-Infinity"/>
+                    <Label fx:id="queueRemainingLabel" styleClass="panel-note" minWidth="-Infinity"/>
                 </HBox>
                 <ListView fx:id="queueList" VBox.vgrow="ALWAYS"/>
                 <HBox styleClass="panel-footer" alignment="CENTER_LEFT">
-                    <Button fx:id="removeFromQueueButton" text="Usuń z kolejki" minWidth="-Infinity" styleClass="button-danger" onAction="#onRemoveFromQueue">
+                    <Button fx:id="removeFromQueueButton" text="%queue.remove" minWidth="-Infinity" styleClass="button-danger" onAction="#onRemoveFromQueue">
                         <graphic><Icon glyph="REMOVE"/></graphic>
                     </Button>
                 </HBox>
             </VBox>
             <VBox fx:id="tracksPanel" styleClass="panel">
                 <HBox styleClass="panel-header" alignment="CENTER_LEFT" spacing="6">
-                    <Label fx:id="tracksTitleLabel" text="Ścieżki" styleClass="section-header" minWidth="-Infinity"/>
+                    <Label fx:id="tracksTitleLabel" styleClass="section-header" minWidth="-Infinity"/>
                     <Label fx:id="tracksFileLabel" styleClass="file-name" textOverrun="CENTER_ELLIPSIS" ellipsisString="…"/>
                     <Label fx:id="tracksInfoLabel" styleClass="panel-note" minWidth="-Infinity"/>
                     <Region HBox.hgrow="ALWAYS"/>
                     <Label fx:id="trackCountLabel" styleClass="panel-note" minWidth="-Infinity"/>
-                    <Button fx:id="applyToAllButton" text="Zastosuj do wszystkich" minWidth="-Infinity" onAction="#onApplyToAll">
+                    <Button fx:id="applyToAllButton" text="%tracks.applyToAll" minWidth="-Infinity" onAction="#onApplyToAll">
                         <tooltip>
-                            <Tooltip text="Kopiuje „Zostaw”, akcję i ścieżki domyślne do pozostałych oczekujących plików z tym samym układem ścieżek."/>
+                            <Tooltip text="%tracks.applyToAll.tooltip"/>
                         </tooltip>
                     </Button>
                 </HBox>
@@ -64,26 +64,26 @@
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS"/>
                     </columnResizePolicy>
                     <columns>
-                        <TableColumn fx:id="keepColumn" text="Zostaw" minWidth="60" prefWidth="60" maxWidth="60"/>
-                        <TableColumn fx:id="indexColumn" text="#" minWidth="32" prefWidth="32" maxWidth="32"/>
-                        <TableColumn fx:id="typeColumn" text="Typ" minWidth="60" prefWidth="60" maxWidth="60"/>
-                        <TableColumn fx:id="codecColumn" text="Kodek" minWidth="110" prefWidth="170"/>
-                        <TableColumn fx:id="channelsColumn" text="Kanały" minWidth="56" prefWidth="56" maxWidth="56"/>
-                        <TableColumn fx:id="languageColumn" text="Język" minWidth="54" prefWidth="54" maxWidth="54"/>
-                        <TableColumn fx:id="titleColumn" text="Tytuł" minWidth="70" prefWidth="200"/>
-                        <TableColumn fx:id="actionColumn" text="Akcja" minWidth="140" prefWidth="140" maxWidth="140"/>
-                        <TableColumn fx:id="defaultColumn" text="Domyślna" minWidth="74" prefWidth="74" maxWidth="74"/>
+                        <TableColumn fx:id="keepColumn" text="%table.column.keep" minWidth="60" prefWidth="60" maxWidth="60"/>
+                        <TableColumn fx:id="indexColumn" text="%table.column.index" minWidth="32" prefWidth="32" maxWidth="32"/>
+                        <TableColumn fx:id="typeColumn" text="%table.column.type" minWidth="60" prefWidth="60" maxWidth="60"/>
+                        <TableColumn fx:id="codecColumn" text="%table.column.codec" minWidth="110" prefWidth="170"/>
+                        <TableColumn fx:id="channelsColumn" text="%table.column.channels" minWidth="68" prefWidth="68" maxWidth="68"/>
+                        <TableColumn fx:id="languageColumn" text="%table.column.language" minWidth="72" prefWidth="72" maxWidth="72"/>
+                        <TableColumn fx:id="titleColumn" text="%table.column.title" minWidth="70" prefWidth="200"/>
+                        <TableColumn fx:id="actionColumn" text="%table.column.action" minWidth="140" prefWidth="140" maxWidth="140"/>
+                        <TableColumn fx:id="defaultColumn" text="%table.column.default" minWidth="74" prefWidth="74" maxWidth="74"/>
                     </columns>
                 </TableView>
                 <HBox styleClass="panel-footer" alignment="CENTER_LEFT" spacing="8">
-                    <Label text="Plik wyjściowy:" styleClass="field-label" minWidth="-Infinity"/>
+                    <Label text="%output.label" styleClass="field-label" minWidth="-Infinity"/>
                     <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                         <TextField fx:id="outputField" HBox.hgrow="ALWAYS" styleClass="path-field,joined-left"/>
-                        <Button fx:id="changeOutputButton" text="Zmień…" minWidth="-Infinity" styleClass="joined-right" onAction="#onChangeOutput"/>
+                        <Button fx:id="changeOutputButton" text="%output.change" minWidth="-Infinity" styleClass="joined-right" onAction="#onChangeOutput"/>
                     </HBox>
-                    <Button fx:id="outputFolderButton" text="Folder dla wszystkich…" minWidth="-Infinity" onAction="#onOutputFolderForAll">
+                    <Button fx:id="outputFolderButton" text="%output.folderForAll" minWidth="-Infinity" onAction="#onOutputFolderForAll">
                         <tooltip>
-                            <Tooltip text="Zapisuje wszystkie oczekujące pliki do wybranego folderu, z zachowaniem ich nazw."/>
+                            <Tooltip text="%output.folderForAll.tooltip"/>
                         </tooltip>
                     </Button>
                 </HBox>
@@ -93,16 +93,16 @@
     <bottom>
         <VBox styleClass="action-bar" spacing="8">
             <HBox spacing="8" alignment="CENTER_LEFT">
-                <Button fx:id="startButton" text="Start" minWidth="-Infinity" styleClass="button-primary" onAction="#onStart">
+                <Button fx:id="startButton" text="%actions.start" minWidth="-Infinity" styleClass="button-primary" onAction="#onStart">
                     <graphic><Icon glyph="START"/></graphic>
                 </Button>
-                <Button fx:id="quickConvertButton" text="Szybka konwersja" minWidth="-Infinity" styleClass="button-warning" onAction="#onQuickConvert">
+                <Button fx:id="quickConvertButton" text="%actions.quickConvert" minWidth="-Infinity" styleClass="button-warning" onAction="#onQuickConvert">
                     <graphic><Icon glyph="QUICK"/></graphic>
                     <tooltip>
-                        <Tooltip text="Wideo + jedna ścieżka audio (domyślna, a gdy żadna nie jest domyślna: ta z największą liczbą kanałów) jako PCM 24-bit, bez edycji ścieżek. Pozostałe ścieżki audio i napisy obrazkowe zostaną pominięte."/>
+                        <Tooltip text="%actions.quickConvert.tooltip"/>
                     </tooltip>
                 </Button>
-                <Button fx:id="cancelButton" text="Anuluj" minWidth="-Infinity" onAction="#onCancel"/>
+                <Button fx:id="cancelButton" text="%actions.cancel" minWidth="-Infinity" onAction="#onCancel"/>
                 <VBox HBox.hgrow="ALWAYS" spacing="3" styleClass="progress-info">
                     <HBox alignment="CENTER_LEFT" spacing="8">
                         <Label fx:id="progressStatusLabel" styleClass="progress-status"/>

@@ -18,7 +18,8 @@ import javafx.scene.text.Text;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import pl.audiofix.AudioFixApp;
 import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.MediaInfo;
@@ -29,6 +30,8 @@ import pl.audiofix.ui.theme.ThemeFonts;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -213,12 +216,13 @@ class MainLayoutTest {
 
     // ---------------------------------------------------------------- track table columns (#45)
 
-    @ParameterizedTest
-    @EnumSource(Theme.class)
-    void smallestWindowFitsTrackTableWithoutCuttingHeaders(Theme theme) throws Exception {
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("themesAndLanguages")
+    void smallestWindowFitsTrackTableWithoutCuttingHeaders(Theme theme, Locale language) throws Exception {
         onFxThread(() -> {
             ThemeFonts.load();   // the dark theme's Geist is wider than Segoe UI
             Theme.setCurrent(theme);
+            Messages.use(language);   // "Channels" and "Language" are wider than "Kanały" and "Język" (#28)
         });
         try {
             load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
@@ -233,11 +237,19 @@ class MainLayoutTest {
                     .filter(header -> !shownText(header).equals(header.getText()))
                     .map(Label::getText)
                     .toList());
-            assertEquals(List.of(), cut, "column headers shortened in " + theme);
+            assertEquals(List.of(), cut, "column headers shortened in " + theme + " " + language);
         }
         finally {
-            onFxThread(() -> Theme.setCurrent(Theme.LIGHT));
+            onFxThread(() -> {
+                Theme.setCurrent(Theme.LIGHT);
+                Messages.use(Locale.getDefault());
+            });
         }
+    }
+
+    static Stream<Arguments> themesAndLanguages() {
+        return Stream.of(Theme.values())
+                .flatMap(theme -> Stream.of(Locale.of("pl"), Locale.ENGLISH).map(language -> Arguments.of(theme, language)));
     }
 
     @Test
@@ -257,7 +269,7 @@ class MainLayoutTest {
 
     private void load(double width, double height) throws Exception {
         onFxThread(() -> {
-            FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(AudioFixApp.class.getResource("ui/main-view.fxml"), Messages.bundle());
             root = loader.load();
             controller = loader.getController();
             Theme.apply(new Scene(root, width, height));
