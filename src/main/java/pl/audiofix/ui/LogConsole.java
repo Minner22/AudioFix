@@ -46,9 +46,9 @@ final class LogConsole {
             }
         });
 
-        MenuItem copySelected = new MenuItem("Kopiuj");
+        MenuItem copySelected = new MenuItem(Messages.get("console.copy"));
         copySelected.setOnAction(event -> copy(selectedText(console)));
-        MenuItem copyAll = new MenuItem("Kopiuj wszystko");
+        MenuItem copyAll = new MenuItem(Messages.get("console.copyAll"));
         copyAll.setOnAction(event -> copy(String.join(System.lineSeparator(), console.getItems())));
         console.setContextMenu(new ContextMenu(copySelected, copyAll));
 

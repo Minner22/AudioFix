@@ -52,7 +52,7 @@ final class AboutDialog {
         Stage stage = new Stage();
         stage.initOwner(owner);
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.setTitle("O programie - " + WINDOW_TITLE);
+        stage.setTitle(Messages.get("about.windowTitle", WINDOW_TITLE));
         AppIcon.apply(stage);
 
         Scene scene = new Scene(root);

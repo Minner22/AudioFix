@@ -104,14 +104,14 @@ final class QueueCell extends ListCell<ConversionJob> {
     static String statusText(JobStatus status, double progress, ConversionMode mode) {
 
         String text = switch (status) {
-            case PENDING -> "Oczekuje";
-            case RUNNING -> "W trakcie " + Math.round(progress * 100) + "%";
-            case DONE -> "Gotowe";
-            case FAILED -> "Błąd";
-            case CANCELLED -> "Anulowano";
+            case PENDING -> Messages.get("status.pending");
+            case RUNNING -> Messages.get("status.running", Math.round(progress * 100));
+            case DONE -> Messages.get("status.done");
+            case FAILED -> Messages.get("status.failed");
+            case CANCELLED -> Messages.get("status.cancelled");
         };
 
-        return mode == ConversionMode.QUICK ? text + " · szybka" : text;
+        return mode == ConversionMode.QUICK ? Messages.get("status.quick", text) : text;
     }
 
     static String statusClass(JobStatus status) {

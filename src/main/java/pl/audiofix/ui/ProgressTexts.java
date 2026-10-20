@@ -24,7 +24,7 @@ final class ProgressTexts {
     static String running(ConversionJob job) {
 
         if (job.getMode() == ConversionMode.QUICK) {
-            return "Szybka konwersja (" + AudioCodec.PCM_S24LE.getLabel() + ")";
+            return Messages.get("progress.quick", AudioCodec.PCM_S24LE.getLabel());
         }
 
         Map<AudioCodec, List<Integer>> tracksByCodec = new LinkedHashMap<>();
@@ -35,12 +35,12 @@ final class ProgressTexts {
         }
 
         if (tracksByCodec.isEmpty()) {
-            return "Kopiowanie ścieżek";
+            return Messages.get("progress.copying");
         }
 
-        return "Konwertowanie: " + tracksByCodec.entrySet().stream()
+        return Messages.get("progress.converting", tracksByCodec.entrySet().stream()
                 .map(entry -> tracks(entry.getValue()) + " (" + entry.getKey().getLabel() + ")")
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(", ")));
     }
 
     /** "ścieżka #1", "ścieżki #1 i #3", "ścieżki #1, #2 i #3". */
@@ -48,19 +48,19 @@ final class ProgressTexts {
 
         List<String> numbers = indexes.stream().map(index -> "#" + index).toList();
         if (numbers.size() == 1) {
-            return "ścieżka " + numbers.getFirst();
+            return Messages.get("progress.tracks.one", numbers.getFirst());
         }
 
-        return "ścieżki " + String.join(", ", numbers.subList(0, numbers.size() - 1)) + " i " + numbers.getLast();
+        return Messages.get("progress.tracks.many", String.join(", ", numbers.subList(0, numbers.size() - 1)), numbers.getLast());
     }
 
     /** "Gotowe", "Anulowano" or "Błąd" once the file is no longer converted. */
     static String finished(JobStatus status) {
 
         return switch (status) {
-            case DONE -> "Gotowe";
-            case CANCELLED -> "Anulowano";
-            case FAILED -> "Błąd";
+            case DONE -> Messages.get("status.done");
+            case CANCELLED -> Messages.get("status.cancelled");
+            case FAILED -> Messages.get("status.failed");
             default -> "";
         };
     }
@@ -71,7 +71,7 @@ final class ProgressTexts {
         // rounded down, so 99.9% is not shown as done; the small margin keeps 0.29 * 100 = 28.999… at 29
         String percent = (int) Math.floor(progress * 100 + 1e-9) + "%";
         return remaining
-                .map(left -> percent + " (Pozostało ok. " + TextFormats.duration(left) + ")")
+                .map(left -> Messages.get("progress.timeLeft", percent, TextFormats.duration(left)))
                 .orElse(percent);
     }
 }

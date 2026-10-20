@@ -62,7 +62,7 @@ public class AboutController {
         appVersionLabel.setText("AudioFix " + info.appVersion());
 
         String ffmpegLabelText = "ffmpeg: " +
-                (info.ffmpegVersion() == null ? "sprawdzanie…" : info.ffmpegVersion()) +
+                (info.ffmpegVersion() == null ? Messages.get("about.ffmpegChecking") : info.ffmpegVersion()) +
                 "\n" +
                 Objects.toString(info.ffmpegPath(), AboutInfo.UNKNOWN);
         ffmpegLabel.setText(ffmpegLabelText);

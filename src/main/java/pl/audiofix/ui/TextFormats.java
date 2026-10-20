@@ -44,16 +44,15 @@ final class TextFormats {
         return String.format(POLISH, "%.1f %s", value, UNITS.get(unit));
     }
 
-    static String count(long n, String one, String few, String many) {
+    static String pluralForm(long n) {
 
         long lastDigit = n % 10;
         long lastTwo = n % 100;
-        String form = n == 1
-                ? one
-                : lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14)
-                    ? few
-                    : many;
-        return n + " " + form;
+        if (n == 1) {
+            return "one";
+        }
+
+        return lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14) ? "few" : "many";
     }
 
     static String containerName(String formatLongName) {
