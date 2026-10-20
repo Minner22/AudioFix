@@ -5,6 +5,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
+import pl.audiofix.model.AudioFixException;
 import pl.audiofix.ui.theme.Theme;
 
 import java.io.File;
@@ -55,13 +56,13 @@ public final class FfmpegSetup {
 
             try {
                 return Optional.of(locator.save(file.toPath()));
-            } catch (IllegalArgumentException e) {
+            } catch (AudioFixException e) {
                 Alert error = new Alert(Alert.AlertType.ERROR);
                 Theme.apply(error);
                 error.initOwner(owner);
                 error.setTitle(WINDOW_TITLE);
                 error.setHeaderText(Messages.get("ffmpeg.invalid.header"));
-                error.setContentText(e.getMessage());
+                error.setContentText(Messages.get(e.userMessage()));
                 error.showAndWait();
             }
         }

@@ -1,5 +1,6 @@
 package pl.audiofix.ffmpeg;
 
+import pl.audiofix.model.UserMessage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -139,6 +140,9 @@ class FfmpegRunnerTest {
                 () -> new FfmpegRunner().run(command, output, 0, new RecordingListener()));
 
         assertTrue(ex.getMessage().contains("Invalid data"), "message should contain ffmpeg stderr, was: " + ex.getMessage());
+        assertEquals("ffmpeg.failed", ex.userMessage().key());
+        assertTrue(String.valueOf(ex.userMessage().args().get(1)).contains("Invalid data"),
+                "ffmpeg's own output is an argument, never translated: " + ex.userMessage());
         assertFalse(Files.exists(output));
     }
 
@@ -147,8 +151,9 @@ class FfmpegRunnerTest {
         Path output = dir.resolve("never.mkv");
         List<String> command = List.of(dir.resolve("no-such-ffmpeg.exe").toString(), "-version");
 
-        assertThrows(FfmpegException.class,
+        var ex = assertThrows(FfmpegException.class,
                 () -> new FfmpegRunner().run(command, output, 0, new RecordingListener()));
+        assertEquals(UserMessage.of("ffmpeg.cannotStart", command.getFirst()), ex.userMessage());
     }
 
     // ---------------------------------------------------------------- cancel

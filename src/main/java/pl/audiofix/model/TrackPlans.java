@@ -41,22 +41,22 @@ public final class TrackPlans {
         normalize(plans, StreamType.SUBTITLE, false);
     }
 
-    public static List<String> validate(List<TrackPlan> plans) {
+    public static List<PlanProblem> validate(List<TrackPlan> plans) {
 
-        List<String> errors = new ArrayList<>();
+        List<PlanProblem> problems = new ArrayList<>();
 
         List<TrackPlan> keptAudio = kept(plans, StreamType.AUDIO);
         if (keptAudio.isEmpty()) {
-            errors.add("Zostaw co najmniej jedną ścieżkę audio.");
+            problems.add(PlanProblem.NO_AUDIO);
         } else if (countDefaults(keptAudio) != 1) {
-            errors.add("Wybierz dokładnie jedną domyślną ścieżkę audio.");
+            problems.add(PlanProblem.DEFAULT_AUDIO_COUNT);
         }
 
         if (countDefaults(kept(plans, StreamType.SUBTITLE)) > 1) {
-            errors.add("Domyślne mogą być najwyżej jedne napisy.");
+            problems.add(PlanProblem.MULTIPLE_DEFAULT_SUBTITLES);
         }
 
-        return errors;
+        return problems;
     }
 
     private static void normalize(List<TrackPlan> plans, StreamType type, boolean required) {
@@ -106,29 +106,29 @@ public final class TrackPlans {
                 .count();
     }
 
-    public static Optional<String> layoutDifference(List<TrackPlan> reference, List<TrackPlan> other) {
+    public static Optional<UserMessage> layoutDifference(List<TrackPlan> reference, List<TrackPlan> other) {
 
         if (reference.size() != other.size()) {
 
-            return Optional.of("inna liczba ścieżek: " + other.size() + " zamiast " + reference.size());
+            return Optional.of(UserMessage.of("layout.trackCount", other.size(), reference.size()));
         }
 
         for (int i = 0; i < reference.size(); i++) {
             StreamInfo expected = reference.get(i).getStream();
             StreamInfo actual = other.get(i).getStream();
-            String track = "ścieżka #" + actual.index() + ": ";
+            String track = String.valueOf(actual.index());   // a text, so a number like 1234 is not grouped
 
             if (expected.type() != actual.type()) {
-                return Optional.of(track + "inny typ ścieżki");
+                return Optional.of(UserMessage.of("layout.type", track));
             }
             if (!Objects.equals(expected.codec(), actual.codec())) {
-                return Optional.of(track + "kodek " + actual.codec() + " zamiast " + expected.codec());
+                return Optional.of(UserMessage.of("layout.codec", track, actual.codec(), expected.codec()));
             }
             if (expected.channels() != actual.channels()) {
-                return Optional.of(track + "kanały " + actual.channels() + " zamiast " + expected.channels());
+                return Optional.of(UserMessage.of("layout.channels", track, actual.channels(), expected.channels()));
             }
             if (!Objects.equals(expected.language(), actual.language())) {
-                return Optional.of(track + "język " + actual.language() + " zamiast " + expected.language());
+                return Optional.of(UserMessage.of("layout.language", track, actual.language(), expected.language()));
             }
         }
 
@@ -138,7 +138,7 @@ public final class TrackPlans {
     public static void copySettings(List<TrackPlan> from, List<TrackPlan> to) {
 
         layoutDifference(from, to).ifPresent(difference -> {
-            throw new IllegalArgumentException("Different track layout: " + difference);
+            throw new IllegalArgumentException("Different track layout: " + difference.key() + " " + difference.args());
         });
 
         // keep first: changing it re-normalizes defaults through listeners, so defaults are set last

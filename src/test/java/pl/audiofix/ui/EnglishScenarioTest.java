@@ -122,6 +122,64 @@ class EnglishScenarioTest {
         assertEquals(List.of("Cannot start the conversion\nNo files are waiting for conversion. Add files."), alertTexts());
     }
 
+    // ---------------------------------------------------------------- messages from the model (#30)
+
+    @Test
+    void resultLinesOfTheLogAreInEnglish() throws Exception {
+        add();
+        ConversionJob job = callOnFxThread(() -> queueJobs().getFirst());
+
+        onFxThread(() -> {
+            job.markRunning();
+            job.markFailed(pl.audiofix.model.UserMessage.of("ffmpeg.failed", "1", "Invalid data found"));
+        });
+
+        assertEquals("Error: ffmpeg exited with an error (code 1):\nInvalid data found", callOnFxThread(() -> job.getLog().getLast()));
+    }
+
+    @Test
+    void doneLineIsInEnglish() throws Exception {
+        add();
+        ConversionJob job = callOnFxThread(() -> queueJobs().getFirst());
+
+        onFxThread(() -> {
+            job.markRunning();
+            job.markDone();
+        });
+
+        assertEquals("Done: Drive_fixed.mkv", callOnFxThread(() -> job.getLog().getLast()));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void actionListIsInEnglish() throws Exception {
+        add();
+
+        ComboBox<pl.audiofix.model.AudioCodec> action = (ComboBox<pl.audiofix.model.AudioCodec>) callOnFxThread(() -> root.lookupAll(".table-cell").stream()
+                .map(node -> (TableCell<?, ?>) node)
+                .filter(cell -> cell.getTableColumn() != null && "actionColumn".equals(cell.getTableColumn().getId()))
+                .filter(cell -> cell.getIndex() == 2)
+                .map(TableCell::getGraphic)
+                .findFirst()
+                .orElseThrow());
+
+        assertEquals("Copy", action.getConverter().toString(pl.audiofix.model.AudioCodec.COPY));
+        assertEquals("PCM 24-bit", action.getConverter().toString(pl.audiofix.model.AudioCodec.PCM_S24LE));
+    }
+
+    @Test
+    void planProblemIsInEnglish() throws Exception {
+        add();
+        onFxThread(() -> {
+            queueJobs().getFirst().getPlans().stream()
+                    .filter(plan -> plan.getStream().isAudio())
+                    .forEach(plan -> plan.setKeep(false));
+            ((Button) root.lookup("#startButton")).fire();
+        });
+
+        assertEquals(List.of("Cannot start the conversion\nDrive.mkv: Keep at least one audio track."), alertTexts());
+    }
+
     // ---------------------------------------------------------------- queue and progress texts
 
     @Test
@@ -169,6 +227,11 @@ class EnglishScenarioTest {
             controller.addMedia(drive);
             FxTestSupport.layout(root);
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ConversionJob> queueJobs() {
+        return ((ListView<ConversionJob>) root.lookup("#queueList")).getItems();
     }
 
     private String text(String id) throws Exception {

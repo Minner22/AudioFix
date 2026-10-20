@@ -14,7 +14,9 @@ import pl.audiofix.ffmpeg.CommandBuilder;
 import pl.audiofix.ffmpeg.FfmpegListener;
 import pl.audiofix.ffmpeg.FfmpegRunner;
 import pl.audiofix.model.ConversionJob;
+import pl.audiofix.model.AudioFixException;
 import pl.audiofix.model.JobStatus;
+import pl.audiofix.model.UserMessage;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -149,7 +151,7 @@ public class JobQueue {
             onFxThread(() -> finish(job, JobStatus.CANCELLED, null));
         } catch (RuntimeException e) {
             log.warn("Conversion of {} failed", job.getInput(), e);
-            onFxThread(() -> finish(job, JobStatus.FAILED, e.getMessage()));
+            onFxThread(() -> finish(job, JobStatus.FAILED, reasonOf(e)));
         }
     }
 
@@ -169,7 +171,7 @@ public class JobQueue {
                 command = commands.apply(job);
             } catch (RuntimeException e) {
                 log.warn("Cannot build command for {}", job.getInput(), e);
-                job.markFailed(e.getMessage());
+                job.markFailed(reasonOf(e));
                 continue;
             }
             job.appendLog(CommandBuilder.toCommandLine(command));
@@ -182,14 +184,23 @@ public class JobQueue {
         return Optional.empty();
     }
 
-    private void finish(ConversionJob job, JobStatus result, String errorMessage) {
+    static UserMessage reasonOf(RuntimeException e) {
+
+        if (e instanceof AudioFixException known) {
+            return known.userMessage();
+        }
+
+        return UserMessage.of("error.unexpected", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+    }
+
+    private void finish(ConversionJob job, JobStatus result, UserMessage error) {
 
         active = null;
         currentJob.set(null);
 
         switch (result) {
             case DONE -> job.markDone();
-            case FAILED -> job.markFailed(errorMessage);
+            case FAILED -> job.markFailed(error);
             case CANCELLED -> job.markCancelled();
             default -> throw new IllegalArgumentException("Not a result: " + result);
         }

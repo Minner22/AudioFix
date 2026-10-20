@@ -1,5 +1,6 @@
 package pl.audiofix.ui;
 
+import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.StreamInfo;
 
 import java.util.Locale;
@@ -25,6 +26,11 @@ final class TrackTexts {
             "vorbis", "Vorbis");
 
     private TrackTexts() {
+    }
+
+    static String codecLabel(AudioCodec codec) {
+
+        return Messages.get("codec." + codec.name());
     }
 
     /** Upper line of the codec cell: the ffprobe codec name, for video also its profile. */

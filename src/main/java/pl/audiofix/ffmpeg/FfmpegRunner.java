@@ -1,5 +1,6 @@
 package pl.audiofix.ffmpeg;
 
+import pl.audiofix.model.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,10 +49,10 @@ public class FfmpegRunner {
             succeeded = true;
             log.info("Finished {}", output);
         } catch (IOException e) {
-            throw new FfmpegException("Nie można uruchomić ffmpeg: " + command.getFirst(), e);
+            throw new FfmpegException("Cannot start ffmpeg: " + command.getFirst(), UserMessage.of("ffmpeg.cannotStart", command.getFirst()), e);
         } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
-            throw new CancellationException("Przerwano konwersję");
+            throw new CancellationException("Conversion interrupted");
         } finally {
             if (!succeeded) {
                 destroyAndWait();
@@ -106,11 +107,12 @@ public class FfmpegRunner {
     private void checkResult(int exitCode, LogTail logTail) {
 
         if (cancelled) {
-            throw new CancellationException("Anulowano konwersję");
+            throw new CancellationException("Conversion cancelled");
         }
 
         if (exitCode != 0) {
-            throw new FfmpegException("ffmpeg zakończył się błędem (kod " + exitCode + "):\n" + logTail);
+            throw new FfmpegException("ffmpeg exited with code " + exitCode + ":\n" + logTail,
+                    UserMessage.of("ffmpeg.failed", String.valueOf(exitCode), logTail.toString()));
         }
     }
 

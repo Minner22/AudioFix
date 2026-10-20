@@ -24,7 +24,7 @@ final class ProgressTexts {
     static String running(ConversionJob job) {
 
         if (job.getMode() == ConversionMode.QUICK) {
-            return Messages.get("progress.quick", AudioCodec.PCM_S24LE.getLabel());
+            return Messages.get("progress.quick", TrackTexts.codecLabel(AudioCodec.PCM_S24LE));
         }
 
         Map<AudioCodec, List<Integer>> tracksByCodec = new LinkedHashMap<>();
@@ -39,7 +39,7 @@ final class ProgressTexts {
         }
 
         return Messages.get("progress.converting", tracksByCodec.entrySet().stream()
-                .map(entry -> tracks(entry.getValue()) + " (" + entry.getKey().getLabel() + ")")
+                .map(entry -> tracks(entry.getValue()) + " (" + TrackTexts.codecLabel(entry.getKey()) + ")")
                 .collect(Collectors.joining(", ")));
     }
 

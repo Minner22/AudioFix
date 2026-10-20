@@ -4,6 +4,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pl.audiofix.model.AudioFixException;
+import pl.audiofix.model.UserMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -256,7 +258,8 @@ class FfmpegLocatorTest {
         Path other = Files.createFile(tempDir.resolve("vlc.exe"));
         Files.createFile(tempDir.resolve("ffprobe.exe"));
 
-        assertThrows(IllegalArgumentException.class, () -> locatorWithPassingVersionCheck().save(other));
+        var ex = assertThrows(AudioFixException.class, () -> locatorWithPassingVersionCheck().save(other));
+        assertEquals(UserMessage.of("ffmpeg.invalid.notFfmpeg", other), ex.userMessage());
         assertNull(prefs.get(PREF_KEY, null));
     }
 
@@ -264,16 +267,18 @@ class FfmpegLocatorTest {
     void saveRejectsMissingFile() {
         Path missing = tempDir.resolve("ffmpeg.exe");
 
-        assertThrows(IllegalArgumentException.class, () -> locatorWithPassingVersionCheck().save(missing));
+        var ex = assertThrows(AudioFixException.class, () -> locatorWithPassingVersionCheck().save(missing));
+        assertEquals("ffmpeg.invalid.notFfmpeg", ex.userMessage().key());
     }
 
     @Test
     void saveRejectsFfmpegWithoutFfprobe() throws IOException {
         Path dir = ffmpegDir("noProbe", false);
 
-        var ex = assertThrows(IllegalArgumentException.class,
+        var ex = assertThrows(AudioFixException.class,
                 () -> locatorWithPassingVersionCheck().save(dir.resolve("ffmpeg.exe")));
-        assertTrue(ex.getMessage().contains("ffprobe"));
+        assertEquals(UserMessage.of("ffmpeg.invalid.noFfprobe", dir), ex.userMessage());
+        assertTrue(ex.getMessage().contains("ffprobe"), "English message for the log: " + ex.getMessage());
         assertNull(prefs.get(PREF_KEY, null));
     }
 
@@ -282,7 +287,8 @@ class FfmpegLocatorTest {
         // empty ffmpeg.exe cannot be started, so the real version check must fail
         Path dir = ffmpegDir("fake", true);
 
-        assertThrows(IllegalArgumentException.class, () -> locator(null).save(dir.resolve("ffmpeg.exe")));
+        var ex = assertThrows(AudioFixException.class, () -> locator(null).save(dir.resolve("ffmpeg.exe")));
+        assertEquals("ffmpeg.invalid.doesNotRun", ex.userMessage().key());
         assertNull(prefs.get(PREF_KEY, null));
     }
 

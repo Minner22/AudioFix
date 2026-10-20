@@ -79,7 +79,7 @@ final class QueueCell extends ListCell<ConversionJob> {
                 job.statusProperty(), job.progressProperty(), job.modeProperty()));
         progress.progressProperty().bind(job.progressProperty());
         job.statusProperty().addListener(refresh);
-        job.errorMessageProperty().addListener(refresh);   // markFailed sets it after the status
+        job.errorProperty().addListener(refresh);
         refresh();
         setGraphic(content);
     }
@@ -126,8 +126,8 @@ final class QueueCell extends ListCell<ConversionJob> {
         status.getStyleClass().add(statusClass(current));
         progress.setVisible(current == JobStatus.RUNNING);
 
-        String tip = current == JobStatus.FAILED && shown.getErrorMessage() != null
-                ? shown.getInput() + "\n\n" + shown.getErrorMessage()
+        String tip = current == JobStatus.FAILED && shown.getError() != null
+                ? shown.getInput() + "\n\n" + Messages.get(shown.getError())
                 : shown.getInput().toString();
         setTooltip(new Tooltip(tip));
     }
@@ -136,7 +136,7 @@ final class QueueCell extends ListCell<ConversionJob> {
 
         if (shown != null) {
             shown.statusProperty().removeListener(refresh);
-            shown.errorMessageProperty().removeListener(refresh);
+            shown.errorProperty().removeListener(refresh);
             status.textProperty().unbind();
             progress.progressProperty().unbind();
             shown = null;

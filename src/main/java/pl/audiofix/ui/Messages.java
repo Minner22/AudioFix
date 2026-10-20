@@ -1,5 +1,8 @@
 package pl.audiofix.ui;
 
+import pl.audiofix.model.AudioFixException;
+import pl.audiofix.model.UserMessage;
+
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -39,6 +42,16 @@ public final class Messages {
     public static String count(String key, long n) {
 
         return get(key + "." + TextFormats.pluralForm(n), n);
+    }
+
+    public static String get(UserMessage message) {
+
+        return get(message.key(), message.argArray());
+    }
+
+    public static String describe(Throwable error) {
+
+        return error instanceof AudioFixException known ? get(known.userMessage()) : String.valueOf(error.getMessage());
     }
 
     static String format(ResourceBundle from, Locale language, String key, Object... args) {

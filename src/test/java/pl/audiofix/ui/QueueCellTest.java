@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import pl.audiofix.model.UserMessage;
 import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.JobStatus;
@@ -163,11 +164,12 @@ class QueueCellTest {
     void failedJobShowsErrorInTooltip() throws Exception {
         onFxThread(() -> {
             job.markRunning();
-            job.markFailed("ffmpeg zakończył się błędem (kod 1)");
+            job.markFailed(UserMessage.of("ffmpeg.failed", "1", "Invalid data"));
         });
 
         assertEquals("Błąd", label(".queue-status").getText());
-        assertTrue(cell.getTooltip().getText().contains("ffmpeg zakończył się błędem (kod 1)"), cell.getTooltip().getText());
+        assertTrue(cell.getTooltip().getText().contains("ffmpeg zakończył się błędem (kod 1):\nInvalid data"),
+                "translated, with ffmpeg's own words: " + cell.getTooltip().getText());
     }
 
     @Test
@@ -353,7 +355,7 @@ class QueueCellTest {
             }
             case FAILED -> {
                 job.markRunning();
-                job.markFailed("błąd");
+                job.markFailed(UserMessage.of("ffprobe.badOutput"));
             }
             case CANCELLED -> job.markCancelled();
         }
