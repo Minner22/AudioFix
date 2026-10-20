@@ -53,6 +53,16 @@ class MessagesTest {
     }
 
     @Test
+    void countInEnglishHasOneAndOther() {
+        Messages.use(Locale.ENGLISH);
+
+        assertEquals("0 tracks", Messages.count("tracks.count", 0));
+        assertEquals("1 track", Messages.count("tracks.count", 1));
+        assertEquals("3 tracks", Messages.count("tracks.count", 3));
+        assertEquals("22 tracks", Messages.count("tracks.count", 22), "the Polish 'few' is plural in English too");
+    }
+
+    @Test
     void textWithoutArgumentsIsTakenAsItIs() {
         // FXMLLoader shows texts as they are, so get() without arguments must not treat ' or {} specially
         assertEquals("it's {not} a pattern", Messages.format(bundle("it's {not} a pattern"), POLISH, "text"));

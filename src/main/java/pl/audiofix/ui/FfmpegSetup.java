@@ -30,8 +30,8 @@ public final class FfmpegSetup {
         Alert info = new Alert(Alert.AlertType.INFORMATION);
         Theme.apply(info);
         info.setTitle(WINDOW_TITLE);
-        info.setHeaderText("Nie znaleziono ffmpeg");
-        info.setContentText("Wskaż plik ffmpeg.exe. W tym samym folderze musi znajdować się plik ffprobe.exe.");
+        info.setHeaderText(Messages.get("ffmpeg.notFound.header"));
+        info.setContentText(Messages.get("ffmpeg.notFound.content"));
         info.showAndWait();
 
         return choose(locator, null);
@@ -40,8 +40,8 @@ public final class FfmpegSetup {
     public static Optional<FfmpegPaths> choose(FfmpegLocator locator, Window owner) {
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Wskaż plik ffmpeg.exe");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Program (*.exe)", "*.exe"));
+        fileChooser.setTitle(Messages.get("ffmpeg.chooser.title"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("ffmpeg.chooser.filter"), "*.exe"));
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
 
         while (true) {
@@ -60,7 +60,7 @@ public final class FfmpegSetup {
                 Theme.apply(error);
                 error.initOwner(owner);
                 error.setTitle(WINDOW_TITLE);
-                error.setHeaderText("Nieprawidłowy plik ffmpeg");
+                error.setHeaderText(Messages.get("ffmpeg.invalid.header"));
                 error.setContentText(e.getMessage());
                 error.showAndWait();
             }

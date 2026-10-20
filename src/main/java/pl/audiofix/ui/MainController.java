@@ -148,7 +148,7 @@ public class MainController {
 
         queueList.setItems(queue.getJobs());
         queueList.setCellFactory(list -> new QueueCell());
-        queueList.setPlaceholder(new Label("Przeciągnij tu filmy albo użyj [Dodaj pliki…]"));
+        queueList.setPlaceholder(new Label(Messages.get("queue.placeholder")));
         queueList.getSelectionModel().selectedItemProperty().addListener((observable, previous, job) -> showJob(job));
 
         queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> {
@@ -169,7 +169,7 @@ public class MainController {
         });
         LogConsole.configure(logList);
 
-        trackTable.setPlaceholder(new Label("Dodaj plik, aby zobaczyć jego ścieżki"));
+        trackTable.setPlaceholder(new Label(Messages.get("tracks.placeholder")));
         TrackTableConfigurer.configureTable(trackTable);
         TrackTableConfigurer.configureKeep(keepColumn);
         TrackTableConfigurer.configureIndex(indexColumn);
@@ -192,9 +192,9 @@ public class MainController {
     private void onAddFiles() {
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Wybierz filmy");
-        chooser.getExtensionFilters()
-                .add(new FileChooser.ExtensionFilter("Filmy (" + String.join(", ", DroppedFiles.chooserPatterns()) + ")", DroppedFiles.chooserPatterns()));
+        chooser.setTitle(Messages.get("files.chooser.title"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                Messages.get("files.chooser.filter", String.join(", ", DroppedFiles.chooserPatterns())), DroppedFiles.chooserPatterns()));
 
         if (lastDirectory != null && lastDirectory.isDirectory()) {
             chooser.setInitialDirectory(lastDirectory);
@@ -252,9 +252,9 @@ public class MainController {
         DroppedFiles files = DroppedFiles.of(dropped);
         if (!files.skipped().isEmpty()) {
             log.info("Skipped dropped files: {}", files.skipped());
-            showWarning(files.supported().isEmpty() ? "Brak filmów do dodania" : "Pominięto część plików",
-                    "Obsługiwane są pliki " + String.join(", ", DroppedFiles.chooserPatterns())
-                            + " i foldery z nimi. Pominięto: " + System.lineSeparator() + fileNames(files.skipped()));
+            showWarning(Messages.get(files.supported().isEmpty() ? "files.noneSupported" : "files.someSkipped"),
+                    Messages.get("files.skippedContent", String.join(", ", DroppedFiles.chooserPatterns()))
+                            + System.lineSeparator() + fileNames(files.skipped()));
         }
         if (files.supported().isEmpty()) {
             return false;
@@ -276,7 +276,7 @@ public class MainController {
         List<Path> alreadyQueued = files.stream().filter(this::isQueued).toList();
         List<Path> toAdd = files.stream().filter(file -> !isQueued(file)).toList();
         if (!alreadyQueued.isEmpty()) {
-            showWarning("Pominięto pliki, które już są w kolejce", fileNames(alreadyQueued));
+            showWarning(Messages.get("files.alreadyQueued"), fileNames(alreadyQueued));
         }
         if (toAdd.isEmpty()) {
             return;
@@ -304,12 +304,12 @@ public class MainController {
         task.setOnSucceeded(event -> {
             setLoading(false);
             if (!task.getValue().isEmpty()) {
-                showWarning("Nie można odczytać części plików", String.join(System.lineSeparator(), task.getValue()));
+                showWarning(Messages.get("files.someUnreadable"), String.join(System.lineSeparator(), task.getValue()));
             }
         });
         task.setOnFailed(event -> {
             setLoading(false);
-            showError("Nie można odczytać plików", task.getException());
+            showError(Messages.get("files.unreadable"), task.getException());
         });
 
         setLoading(true);
@@ -327,7 +327,7 @@ public class MainController {
         Path output = OutputPathResolver.defaultOutput(info.path(), outputsInUse(null));
         ConversionJob job = new ConversionJob(info, plans, output, ConversionMode.PLANNED);
         job.appendLog(LogLines.versionLine(AppVersion.current(), ffmpegVersionLine));
-        job.appendLog("Wczytano " + info.path().getFileName() + ": " + info.streams().size() + " ścieżek");
+        job.appendLog(Messages.get("log.loaded", info.path().getFileName(), Messages.count("tracks.count", info.streams().size())));
 
         queue.add(job);
         queueList.getSelectionModel().select(job);
@@ -370,7 +370,7 @@ public class MainController {
         }
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Zapisz jako");
+        chooser.setTitle(Messages.get("output.chooser.title"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Matroska (*.mkv)", "*.mkv"));
 
         File initialDir = job.getOutput().getParent().toFile();
@@ -390,13 +390,11 @@ public class MainController {
 
         Path chosen = OutputPathResolver.withMkvExtension(chosenFile);
         if (OutputPathResolver.isSameFile(chosen, job.getInput())) {
-            showWarning("Nieprawidłowy plik wyjściowy",
-                    "Plik wyjściowy nie może być tym samym plikiem co film źródłowy");
+            showWarning(Messages.get("output.invalid"), Messages.get("output.sameAsSource"));
             return;
         }
         if (outputsInUse(job).stream().anyMatch(path -> OutputPathResolver.isSameFile(path, chosen))) {
-            showWarning("Nieprawidłowy plik wyjściowy",
-                    "Do tego pliku zapisze już inny film z kolejki");
+            showWarning(Messages.get("output.invalid"), Messages.get("output.takenByOther"));
             return;
         }
         job.setOutput(chosen);
@@ -415,7 +413,7 @@ public class MainController {
 
         List<ConversionJob> targets = pendingJobs().stream().filter(job -> job != from).toList();
         if (targets.isEmpty()) {
-            showInfo("Zastosuj do wszystkich", "Brak innych plików oczekujących na konwersję.");
+            showInfo(Messages.get("tracks.applyToAll"), Messages.get("applyToAll.noOthers"));
             return;
         }
 
@@ -431,12 +429,12 @@ public class MainController {
             }
         }
 
-        String result = "Ustawienia ścieżek skopiowano do plików: " + applied;
+        String result = Messages.get("applyToAll.applied", applied);
         if (skipped.isEmpty()) {
-            showInfo("Zastosuj do wszystkich", result);
+            showInfo(Messages.get("tracks.applyToAll"), result);
         } else {
-            showWarning("Zastosuj do wszystkich", result + System.lineSeparator()
-                    + "Pominięto (inny układ ścieżek):" + System.lineSeparator()
+            showWarning(Messages.get("tracks.applyToAll"), result + System.lineSeparator()
+                    + Messages.get("applyToAll.skipped") + System.lineSeparator()
                     + String.join(System.lineSeparator(), skipped));
         }
     }
@@ -445,7 +443,7 @@ public class MainController {
     private void onOutputFolderForAll() {
 
         DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Folder dla wszystkich plików");
+        chooser.setTitle(Messages.get("output.folderForAll.title"));
         if (shown != null) {
             File current = shown.getOutput().getParent().toFile();
             if (current.isDirectory()) {
@@ -474,7 +472,7 @@ public class MainController {
         }
 
         if (!renamed.isEmpty()) {
-            showInfo("Folder dla wszystkich", "Część nazw była już zajęta w tym folderze:"
+            showInfo(Messages.get("output.folderForAll.header"), Messages.get("output.folderForAll.renamed")
                     + System.lineSeparator() + String.join(System.lineSeparator(), renamed));
         }
     }
@@ -502,7 +500,7 @@ public class MainController {
 
         List<ConversionJob> pending = pendingJobs();
         if (pending.isEmpty()) {
-            showWarning("Nie można rozpocząć konwersji", "Brak plików oczekujących na konwersję. Dodaj pliki.");
+            showWarning(Messages.get("start.failed"), Messages.get("start.nothingWaiting"));
             return;
         }
 
@@ -520,7 +518,7 @@ public class MainController {
         }
         if (firstInvalid != null) {
             queueList.getSelectionModel().select(firstInvalid);
-            showWarning("Nie można rozpocząć konwersji", String.join(System.lineSeparator(), errors));
+            showWarning(Messages.get("start.failed"), String.join(System.lineSeparator(), errors));
             return;
         }
 
@@ -532,7 +530,7 @@ public class MainController {
 
         List<ConversionJob> pending = pendingJobs();
         if (pending.isEmpty()) {
-            showWarning("Nie można rozpocząć konwersji", "Brak plików oczekujących na konwersję. Dodaj pliki.");
+            showWarning(Messages.get("start.failed"), Messages.get("start.nothingWaiting"));
             return;
         }
 
@@ -565,12 +563,12 @@ public class MainController {
         }
 
         List<String> lines = new ArrayList<>();
-        lines.add("Gotowe: " + done);
+        lines.add(Messages.get("summary.done", done));
         if (!failed.isEmpty()) {
-            lines.add("Błędy: " + failed.size());
+            lines.add(Messages.get("summary.failed", failed.size()));
         }
         if (cancelled > 0) {
-            lines.add("Anulowane: " + cancelled);
+            lines.add(Messages.get("summary.cancelled", cancelled));
         }
         for (ConversionJob job : failed) {
             lines.add("• " + job.getInput().getFileName() + ": " + firstLine(job.getErrorMessage()));
@@ -578,9 +576,9 @@ public class MainController {
         String summary = String.join(System.lineSeparator(), lines);
 
         if (failed.isEmpty()) {
-            showInfo("Konwersja zakończona", summary);
+            showInfo(Messages.get("summary.finished"), summary);
         } else {
-            showWarning("Konwersja zakończona z błędami", summary + System.lineSeparator() + "Szczegóły w logu pliku.");
+            showWarning(Messages.get("summary.finishedWithErrors"), summary + System.lineSeparator() + Messages.get("summary.details"));
         }
     }
 
@@ -600,7 +598,7 @@ public class MainController {
         try {
             AboutDialog.show(window(), ffmpegPaths, hostServices);
         } catch (RuntimeException e) {
-            showError("Nie można otworzyć okna „O programie”", e);
+            showError(Messages.get("about.openFailed"), e);
         }
     }
 
@@ -625,14 +623,14 @@ public class MainController {
 
         List<ConversionJob> jobs = queue.getJobs();
         long remaining = jobs.stream().filter(job -> !job.getStatus().isFinished()).count();
-        queueTitleLabel.setText("Kolejka plików (" + jobs.size() + ")");
-        queueRemainingLabel.setText("Pozostało: " + remaining);
+        queueTitleLabel.setText(Messages.get("queue.title", jobs.size()));
+        queueRemainingLabel.setText(Messages.get("queue.remaining", remaining));
     }
 
     private void updateTracksHeader() {
 
         if (shown == null) {
-            tracksTitleLabel.setText("Ścieżki");
+            tracksTitleLabel.setText(Messages.get("tracks.title"));
             tracksFileLabel.setText("");
             tracksFileLabel.setTooltip(null);
             tracksInfoLabel.setText("");
@@ -640,11 +638,11 @@ public class MainController {
             return;
         }
 
-        tracksTitleLabel.setText("Ścieżki:");
+        tracksTitleLabel.setText(Messages.get("tracks.titleWithFile"));
         tracksFileLabel.setText(shown.getInput().getFileName().toString());
         tracksFileLabel.setTooltip(new Tooltip(shown.getInput().toString()));
         tracksInfoLabel.setText(TextFormats.fileInfo(shown.getMediaInfo()));
-        trackCountLabel.setText(TextFormats.count(trackTable.getItems().size(), "ścieżka", "ścieżki", "ścieżek"));
+        trackCountLabel.setText(Messages.count("tracks.count", trackTable.getItems().size()));
     }
 
     private void setLoading(boolean value) {

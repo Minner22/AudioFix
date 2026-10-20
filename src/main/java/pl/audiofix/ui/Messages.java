@@ -36,6 +36,11 @@ public final class Messages {
         return format(bundle, locale, key, args);
     }
 
+    public static String count(String key, long n) {
+
+        return get(key + "." + TextFormats.pluralForm(n), n);
+    }
+
     static String format(ResourceBundle from, Locale language, String key, Object... args) {
 
         String pattern = from.getString(key);

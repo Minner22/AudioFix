@@ -24,9 +24,6 @@ public final class TrackTableConfigurer {
     static final PseudoClass REMOVED = PseudoClass.getPseudoClass("removed");
     static final PseudoClass MISSING = PseudoClass.getPseudoClass("missing");
 
-    static final String VIDEO_ACTION = "Kopiuj (passthrough)";
-    static final String SUBTITLE_ACTION = "Kopiuj";
-
     private static final List<String> TYPE_CLASSES = List.of("type-video", "type-audio", "type-subtitle");
     private static final List<String> LANGUAGE_CLASSES = List.of("language-local", "language-unknown", "language-other");
 
@@ -114,13 +111,7 @@ public final class TrackTableConfigurer {
 
     static String typeLabel(StreamType type) {
 
-        return switch (type) {
-            case VIDEO -> "Wideo";
-            case AUDIO -> "Audio";
-            case SUBTITLE -> "Napisy";
-            case ATTACHMENT -> "Załącznik";
-            case OTHER -> "Inne";
-        };
+        return Messages.get("track.type." + type.name());
     }
 
     /** "type-video", "type-audio", "type-subtitle": the color of the "Typ" text. */
@@ -331,7 +322,7 @@ public final class TrackTableConfigurer {
             }
 
             if (!row.getStream().isAudio()) {
-                fixed.getItems().setAll(row.getStream().type() == StreamType.VIDEO ? VIDEO_ACTION : SUBTITLE_ACTION);
+                fixed.getItems().setAll(Messages.get(row.getStream().type() == StreamType.VIDEO ? "track.action.videoCopy" : "track.action.subtitleCopy"));
                 fixed.getSelectionModel().selectFirst();
                 setGraphic(fixed);
                 return;

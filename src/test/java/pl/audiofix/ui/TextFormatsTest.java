@@ -52,7 +52,22 @@ class TextFormatsTest {
             122  | 122 ścieżki
             """)
     void countUsesPolishNounForms(long n, String expected) {
-        assertEquals(expected, TextFormats.count(n, "ścieżka", "ścieżki", "ścieżek"));
+        // tests run in Polish (pom.xml); the forms come from messages.properties
+        assertEquals(expected, Messages.count("tracks.count", n));
+    }
+
+    @ParameterizedTest(name = "{0} -> {1}")
+    @CsvSource({
+            "1,   one",
+            "2,   few",
+            "4,   few",
+            "5,   many",
+            "12,  many",
+            "22,  few",
+            "0,   many",
+    })
+    void pluralFormNamesTheKeySuffix(long n, String form) {
+        assertEquals(form, TextFormats.pluralForm(n));
     }
 
     // ---------------------------------------------------------------- container

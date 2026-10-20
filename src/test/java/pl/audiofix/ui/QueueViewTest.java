@@ -142,7 +142,7 @@ class QueueViewTest {
                 table.getItems());
         assertEquals(dir.resolve("Odcinek 1_fixed.mkv").toString(), outputField.getText());
         assertTrue(logList.getItems().getFirst().startsWith("AudioFix "), "log starts with the versions: " + logText());
-        assertTrue(logText().contains("Wczytano Odcinek 1.mkv: 3 ścieżek"), logText());
+        assertTrue(logText().contains("Wczytano Odcinek 1.mkv: 3 ścieżki"), "plural form of 3 (#29): " + logText());
         assertFalse(logText().contains("Odcinek 2"), "log of the other file leaked in:\n" + logText());
     }
 
