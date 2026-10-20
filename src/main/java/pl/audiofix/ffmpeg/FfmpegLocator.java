@@ -1,5 +1,7 @@
 package pl.audiofix.ffmpeg;
 
+import pl.audiofix.model.AudioFixException;
+import pl.audiofix.model.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,16 +50,16 @@ public class FfmpegLocator {
 
         if (!Files.isRegularFile(ffmpegPath)
                 || !ffmpegPath.getFileName().toString().equalsIgnoreCase(FFMPEG_EXE)) {
-            throw new IllegalArgumentException("Wskazany plik to nie ffmpeg.exe: " + ffmpegPath);
+            throw new AudioFixException("Not ffmpeg.exe: " + ffmpegPath, UserMessage.of("ffmpeg.invalid.notFfmpeg", ffmpegPath));
         }
 
         FfmpegPaths paths = FfmpegPaths.fromFfmpeg(ffmpegPath);
         if (!Files.isRegularFile(paths.ffprobe())) {
-            throw new IllegalArgumentException("Nie znaleziono ffprobe.exe w folderze: " + ffmpegPath.getParent());
+            throw new AudioFixException("No ffprobe.exe in " + ffmpegPath.getParent(), UserMessage.of("ffmpeg.invalid.noFfprobe", ffmpegPath.getParent()));
         }
 
         if (!ffmpegVersionCheckOk(ffmpegPath)) {
-            throw new IllegalArgumentException("Nie można uruchomić ffmpeg.exe lub zwraca niepoprawny kod wyjścia.");
+            throw new AudioFixException("ffmpeg.exe does not run: " + ffmpegPath, UserMessage.of("ffmpeg.invalid.doesNotRun"));
         }
 
         preferences.put(PREF_KEY, ffmpegPath.toAbsolutePath().toString());

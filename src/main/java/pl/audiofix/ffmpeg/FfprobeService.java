@@ -1,5 +1,6 @@
 package pl.audiofix.ffmpeg;
 
+import pl.audiofix.model.UserMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.audiofix.model.MediaInfo;
@@ -44,22 +45,22 @@ public class FfprobeService {
 
             if (!process.waitFor(30, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
-                throw new FfprobeException("ffprobe nie odpowiada: " + file);
+                throw new FfprobeException("ffprobe does not respond: " + file, UserMessage.of("ffprobe.timeout", file));
             }
 
             if (process.exitValue() != 0) {
                 String error = stderr.join().trim();
                 log.warn("ffprobe failed for {}: {}", file, error);
                 error = error.isEmpty() ? "exit code " + process.exitValue() : error;
-                throw new FfprobeException("Nie można odczytać pliku " + file + ": " + error);
+                throw new FfprobeException("Cannot read " + file + ": " + error, UserMessage.of("ffprobe.cannotRead", file, error));
             }
 
             return parser.parse(file, stdout.join());
         } catch (IOException e) {
-            throw new FfprobeException("Nie można uruchomić ffprobe: " + ffprobe, e);
+            throw new FfprobeException("Cannot start ffprobe: " + ffprobe, UserMessage.of("ffprobe.cannotStart", ffprobe), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new FfprobeException("Przerwano odczyt pliku " + file, e);
+            throw new FfprobeException("Reading " + file + " was interrupted", UserMessage.of("ffprobe.interrupted", file), e);
         }
     }
 

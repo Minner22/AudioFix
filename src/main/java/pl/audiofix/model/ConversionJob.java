@@ -5,8 +5,6 @@ import javafx.beans.property.ReadOnlyDoubleProperty;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -26,7 +24,7 @@ public class ConversionJob {
     private final ObjectProperty<Path> output;
     private final ReadOnlyObjectWrapper<JobStatus> status = new ReadOnlyObjectWrapper<>(JobStatus.PENDING);
     private final ReadOnlyDoubleWrapper progress = new ReadOnlyDoubleWrapper();
-    private final ReadOnlyStringWrapper errorMessage = new ReadOnlyStringWrapper();
+    private final ReadOnlyObjectWrapper<UserMessage> error = new ReadOnlyObjectWrapper<>();
     private final ObservableList<String> log = FXCollections.observableArrayList();
     private final ObservableList<String> readOnlyLog = FXCollections.unmodifiableObservableList(log);
 
@@ -52,9 +50,9 @@ public class ConversionJob {
         return progress.getReadOnlyProperty();
     }
 
-    public ReadOnlyStringProperty errorMessageProperty() {
+    public ReadOnlyObjectProperty<UserMessage> errorProperty() {
 
-        return errorMessage.getReadOnlyProperty();
+        return error.getReadOnlyProperty();
     }
 
     public ReadOnlyObjectProperty<Path> outputProperty() {
@@ -102,9 +100,9 @@ public class ConversionJob {
         return progress.get();
     }
 
-    public String getErrorMessage() {
+    public UserMessage getError() {
 
-        return errorMessage.get();
+        return error.get();
     }
 
     public ObservableList<String> getLog() {
@@ -135,15 +133,14 @@ public class ConversionJob {
 
         transition(JobStatus.RUNNING, JobStatus.DONE);
         progress.set(1);
-        appendLog("Gotowe: " + getOutput().getFileName());
     }
 
-    public void markFailed(String message) {
+    public void markFailed(UserMessage reason) {
 
-        transition(JobStatus.RUNNING, JobStatus.FAILED);
-        errorMessage.set(message);
+        requireStatus(JobStatus.RUNNING, JobStatus.FAILED);
+        error.set(reason);
+        status.set(JobStatus.FAILED);
         progress.set(0);
-        appendLog("Błąd: " + message);
     }
 
     public void markCancelled() {
@@ -156,7 +153,6 @@ public class ConversionJob {
 
         status.set(JobStatus.CANCELLED);
         progress.set(0);
-        appendLog("Anulowano");
     }
 
     public void setProgress(double fraction) {
@@ -189,11 +185,15 @@ public class ConversionJob {
 
     private void transition(JobStatus from, JobStatus to) {
 
+        requireStatus(from, to);
+        status.set(to);
+    }
+
+    private void requireStatus(JobStatus from, JobStatus to) {
+
         if (getStatus() != from) {
             throw new IllegalStateException("Cannot go from " + getStatus() + " to " + to);
         }
-
-        status.set(to);
     }
 
     @Override

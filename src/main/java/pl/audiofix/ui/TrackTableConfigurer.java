@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.layout.Region;
+import javafx.util.StringConverter;
 import javafx.scene.layout.VBox;
 import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.StreamInfo;
@@ -298,6 +299,18 @@ public final class TrackTableConfigurer {
         ActionCell() {
 
             codecs.getItems().setAll(AudioCodec.values());
+            codecs.setConverter(new StringConverter<>() {
+
+                @Override
+                public String toString(AudioCodec codec) {
+                    return codec == null ? "" : TrackTexts.codecLabel(codec);
+                }
+
+                @Override
+                public AudioCodec fromString(String text) {
+                    throw new UnsupportedOperationException("the action list is not editable");
+                }
+            });
             codecs.setMaxWidth(Double.MAX_VALUE);
             codecs.setOnAction(event -> {
                 if (plan != null && codecs.getValue() != null) {

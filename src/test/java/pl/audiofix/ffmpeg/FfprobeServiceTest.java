@@ -75,5 +75,8 @@ class FfprobeServiceTest {
         var ex = assertThrows(FfprobeException.class, () -> service.probe(fake));
         assertTrue(ex.getMessage().contains("Invalid data"),
                 "message should contain ffprobe stderr, was: " + ex.getMessage());
+        assertEquals("ffprobe.cannotRead", ex.userMessage().key());
+        assertEquals(fake, ex.userMessage().args().get(0));
+        assertTrue(String.valueOf(ex.userMessage().args().get(1)).contains("Invalid data"), ex.userMessage().toString());
     }
 }

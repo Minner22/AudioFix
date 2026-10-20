@@ -9,6 +9,7 @@ import pl.audiofix.model.AudioCodec;
 import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.MediaInfo;
+import pl.audiofix.model.UserMessage;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicLong;
@@ -111,7 +112,7 @@ class ProgressViewTest {
         assertEquals("Anulowano", status.getText());
 
         ConversionJob failed = running(ProgressTextsTest.drive(ConversionMode.PLANNED));
-        onFxThread(() -> failed.markFailed("ffmpeg exited with code 1"));
+        onFxThread(() -> failed.markFailed(UserMessage.of("ffmpeg.failed", "1", "Invalid data")));
         assertEquals("Błąd", status.getText());
     }
 

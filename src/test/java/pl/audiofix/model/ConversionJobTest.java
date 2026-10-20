@@ -26,7 +26,7 @@ class ConversionJobTest {
         assertEquals(JobStatus.PENDING, job.getStatus());
         assertTrue(job.isEditable());
         assertEquals(0.0, job.getProgress());
-        assertNull(job.getErrorMessage());
+        assertNull(job.getError());
         assertEquals(List.of(), job.getLog());
     }
 
@@ -115,33 +115,33 @@ class ConversionJobTest {
     }
 
     @Test
-    void doneJobLogsItsOutputFile() {
-        ConversionJob job = job();
-        job.markRunning();
+    void finishingWritesNoTextOfItsOwn() {
+        // the model only reports the status; the UI writes "Gotowe: …" in the chosen language (#30)
+        ConversionJob done = job();
+        done.markRunning();
+        done.appendLog("ffmpeg output");
+        done.markDone();
 
-        job.markDone();
+        ConversionJob failed = job();
+        failed.markRunning();
+        failed.appendLog("ffmpeg output");
+        failed.markFailed(UserMessage.of("ffmpeg.failed", "1", "Invalid data"));
 
-        assertEquals("Gotowe: Film_fixed.mkv", job.getLog().getLast());
+        assertEquals(List.of("ffmpeg output"), done.getLog());
+        assertEquals(List.of("ffmpeg output"), failed.getLog());
     }
 
     @Test
-    void failedJobLogsTheError() {
+    void errorIsKnownWhenStatusChangesToFailed() {
+        // MainController writes the error line when the status turns FAILED, so the error must be there first
         ConversionJob job = job();
         job.markRunning();
+        List<UserMessage> seen = new ArrayList<>();
+        job.statusProperty().addListener((observable, old, status) -> seen.add(job.getError()));
 
-        job.markFailed("ffmpeg exited with code 1");
+        job.markFailed(UserMessage.of("ffmpeg.failed", "1", "Invalid data"));
 
-        assertEquals("Błąd: ffmpeg exited with code 1", job.getLog().getLast());
-    }
-
-    @Test
-    void cancelledJobLogsIt() {
-        ConversionJob job = job();
-        job.markRunning();
-
-        job.markCancelled();
-
-        assertEquals("Anulowano", job.getLog().getLast());
+        assertEquals(List.of(UserMessage.of("ffmpeg.failed", "1", "Invalid data")), seen);
     }
 
     // ---------------------------------------------------------------- converts audio (#46)
@@ -176,10 +176,10 @@ class ConversionJobTest {
         job.markRunning();
         job.setProgress(0.4);
 
-        job.markFailed("ffmpeg zakończył się błędem (kod 1)");
+        job.markFailed(UserMessage.of("ffmpeg.failed", "1", "Invalid data"));
 
         assertEquals(JobStatus.FAILED, job.getStatus());
-        assertEquals("ffmpeg zakończył się błędem (kod 1)", job.getErrorMessage());
+        assertEquals(UserMessage.of("ffmpeg.failed", "1", "Invalid data"), job.getError());
         assertEquals(0.0, job.getProgress());
     }
 
@@ -215,8 +215,8 @@ class ConversionJobTest {
     void jobCannotFailWithoutRunning() {
         ConversionJob job = job();
 
-        assertThrows(IllegalStateException.class, () -> job.markFailed("x"));
-        assertNull(job.getErrorMessage(), "a rejected change must not leave a message behind");
+        assertThrows(IllegalStateException.class, () -> job.markFailed(UserMessage.of("x")));
+        assertNull(job.getError(), "a rejected change must not leave a message behind");
     }
 
     @Test

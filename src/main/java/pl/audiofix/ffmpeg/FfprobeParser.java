@@ -1,5 +1,6 @@
 package pl.audiofix.ffmpeg;
 
+import pl.audiofix.model.UserMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class FfprobeParser {
         try {
             output = MAPPER.readValue(json, ProbeOutput.class);
         } catch (JsonProcessingException e) {
-            throw new FfprobeException("Nie udało się odczytać danych z ffprobe", e);
+            throw new FfprobeException("Cannot parse the output of ffprobe", UserMessage.of("ffprobe.badOutput"), e);
         }
 
         List<StreamInfo> streams = output.streams() == null

@@ -19,8 +19,9 @@ final class LogLines {
 
     /** The ffmpeg executable at the start of the line (quoted when its path has spaces): the command JobQueue logs. */
     private static final Pattern COMMAND = Pattern.compile("(?i)^(\"[^\"]*ffmpeg(\\.exe)?\"|\\S*ffmpeg(\\.exe)?)\\s");
-    private static final Pattern ERROR = Pattern.compile("(?i)^błąd\\b|\\b(error|invalid|failed)\\b");
-    private static final Pattern WARNING = Pattern.compile("(?i)^anulowano\\b|\\b(warning|deprecated)\\b");
+    /** Words in ffmpeg's own output, which is always English. */
+    private static final Pattern ERROR = Pattern.compile("(?i)\\b(error|invalid|failed)\\b");
+    private static final Pattern WARNING = Pattern.compile("(?i)\\b(warning|deprecated)\\b");
 
     private LogLines() {
     }
@@ -33,14 +34,25 @@ final class LogLines {
         if (COMMAND.matcher(line).lookingAt()) {
             return Kind.COMMAND;
         }
-        if (ERROR.matcher(line).find()) {
+
+        if (startsLike(line, "log.done")) {
+            return Kind.SUCCESS;
+        }
+        if (startsLike(line, "log.failed") || ERROR.matcher(line).find()) {
             return Kind.ERROR;
         }
-        if (WARNING.matcher(line).find()) {
+        if (startsLike(line, "log.cancelled") || WARNING.matcher(line).find()) {
             return Kind.WARNING;
         }
 
-        return line.startsWith("Gotowe") ? Kind.SUCCESS : Kind.PLAIN;
+        return Kind.PLAIN;
+    }
+
+    private static boolean startsLike(String line, String key) {
+
+        String pattern = Messages.bundle().getString(key);
+        int argument = pattern.indexOf('{');
+        return line.startsWith(argument >= 0 ? pattern.substring(0, argument) : pattern);
     }
 
     /**

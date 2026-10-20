@@ -1,14 +1,17 @@
 package pl.audiofix.ffmpeg;
 
-public class FfprobeException extends RuntimeException {
+import pl.audiofix.model.AudioFixException;
+import pl.audiofix.model.UserMessage;
 
-    public FfprobeException(String message) {
+public class FfprobeException extends AudioFixException {
 
-        super(message);
+    public FfprobeException(String englishMessage, UserMessage userMessage) {
+
+        super(englishMessage, userMessage);
     }
 
-    public FfprobeException(String message, Throwable cause) {
+    public FfprobeException(String englishMessage, UserMessage userMessage, Throwable cause) {
 
-        super(message, cause);
+        super(englishMessage, userMessage, cause);
     }
 }

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AudioCodecTest {
 
@@ -56,8 +57,16 @@ class AudioCodecTest {
     }
 
     @Test
-    void toStringIsLabelForComboBox() {
-        assertEquals("PCM 24-bit", AudioCodec.PCM_S24LE.toString());
-        assertEquals("E-AC3 (Dolby Digital+)", AudioCodec.EAC3.toString());
+    void everyCodecHasItsNameInBothLanguages() throws java.io.IOException {
+        // the model has no texts (#30); the "Akcja" list shows codec.<NAME> from the translation files
+        for (String file : java.util.List.of("messages.properties", "messages_en.properties")) {
+            java.util.Properties texts = new java.util.Properties();
+            try (var in = AudioCodec.class.getResourceAsStream("/pl/audiofix/i18n/" + file)) {
+                texts.load(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8));
+            }
+            for (AudioCodec codec : AudioCodec.values()) {
+                assertTrue(texts.containsKey("codec." + codec.name()), "codec." + codec.name() + " missing in " + file);
+            }
+        }
     }
 }

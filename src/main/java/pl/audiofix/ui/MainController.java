@@ -25,10 +25,12 @@ import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.JobStatus;
 import pl.audiofix.model.MediaInfo;
+import pl.audiofix.model.PlanProblem;
 import pl.audiofix.model.StreamInfo;
 import pl.audiofix.model.StreamType;
 import pl.audiofix.model.TrackPlan;
 import pl.audiofix.model.TrackPlans;
+import pl.audiofix.model.UserMessage;
 import pl.audiofix.queue.JobQueue;
 import pl.audiofix.ui.theme.Theme;
 import pl.audiofix.ui.theme.ThemeChoice;
@@ -293,7 +295,7 @@ public class MainController {
                         Platform.runLater(() -> addMedia(info));
                     } catch (RuntimeException e) {
                         log.warn("Cannot read {}", file, e);
-                        failures.add(file.getFileName() + ": " + e.getMessage());
+                        failures.add(file.getFileName() + ": " + Messages.describe(e));
                     }
                 }
 
@@ -326,6 +328,7 @@ public class MainController {
 
         Path output = OutputPathResolver.defaultOutput(info.path(), outputsInUse(null));
         ConversionJob job = new ConversionJob(info, plans, output, ConversionMode.PLANNED);
+        job.statusProperty().addListener((observable, previous, status) -> logResult(job, status));
         job.appendLog(LogLines.versionLine(AppVersion.current(), ffmpegVersionLine));
         job.appendLog(Messages.get("log.loaded", info.path().getFileName(), Messages.count("tracks.count", info.streams().size())));
 
@@ -333,6 +336,16 @@ public class MainController {
         queueList.getSelectionModel().select(job);
 
         return job;
+    }
+
+    private static void logResult(ConversionJob job, JobStatus status) {
+
+        switch (status) {
+            case DONE -> job.appendLog(Messages.get("log.done", job.getOutput().getFileName()));
+            case FAILED -> job.appendLog(Messages.get("log.failed", Messages.get(job.getError())));
+            case CANCELLED -> job.appendLog(Messages.get("log.cancelled"));
+            default -> { }
+        }
     }
 
     private void showJob(ConversionJob job) {
@@ -420,9 +433,9 @@ public class MainController {
         int applied = 0;
         List<String> skipped = new ArrayList<>();
         for (ConversionJob job : targets) {
-            Optional<String> difference = TrackPlans.layoutDifference(from.getPlans(), job.getPlans());
+            Optional<UserMessage> difference = TrackPlans.layoutDifference(from.getPlans(), job.getPlans());
             if (difference.isPresent()) {
-                skipped.add("• " + job.getInput().getFileName() + ": " + difference.get());
+                skipped.add("• " + job.getInput().getFileName() + ": " + Messages.get(difference.get()));
             } else {
                 TrackPlans.copySettings(from.getPlans(), job.getPlans());
                 applied++;
@@ -510,11 +523,11 @@ public class MainController {
             if (job.getMode() == ConversionMode.QUICK) {
                 continue;
             }
-            List<String> jobErrors = TrackPlans.validate(job.getPlans());
-            if (!jobErrors.isEmpty() && firstInvalid == null) {
+            List<PlanProblem> problems = TrackPlans.validate(job.getPlans());
+            if (!problems.isEmpty() && firstInvalid == null) {
                 firstInvalid = job;
             }
-            jobErrors.forEach(error -> errors.add(job.getInput().getFileName() + ": " + error));
+            problems.forEach(problem -> errors.add(job.getInput().getFileName() + ": " + Messages.get(problem.messageKey())));
         }
         if (firstInvalid != null) {
             queueList.getSelectionModel().select(firstInvalid);
@@ -571,7 +584,7 @@ public class MainController {
             lines.add(Messages.get("summary.cancelled", cancelled));
         }
         for (ConversionJob job : failed) {
-            lines.add("• " + job.getInput().getFileName() + ": " + firstLine(job.getErrorMessage()));
+            lines.add("• " + job.getInput().getFileName() + ": " + firstLine(Messages.get(job.getError())));
         }
         String summary = String.join(System.lineSeparator(), lines);
 
@@ -689,7 +702,7 @@ public class MainController {
     private void showError(String header, Throwable error) {
 
         log.warn(header, error);
-        showAlert(Alert.AlertType.ERROR, header, error.getMessage());
+        showAlert(Alert.AlertType.ERROR, header, Messages.describe(error));
     }
 
     private void showWarning(String header, String content) {

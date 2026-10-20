@@ -177,10 +177,7 @@ class TrackPlansTest {
         List<TrackPlan> plans = plans();
         plans.stream().filter(p -> p.getStream().isAudio()).forEach(p -> p.setKeep(false));
 
-        List<String> errors = TrackPlans.validate(plans);
-
-        assertEquals(1, errors.size());
-        assertTrue(errors.getFirst().contains("audio"), errors.toString());
+        assertEquals(List.of(PlanProblem.NO_AUDIO), TrackPlans.validate(plans));
     }
 
     @Test
@@ -188,7 +185,7 @@ class TrackPlansTest {
         List<TrackPlan> plans = plans();
         plans.get(1).setMakeDefault(false);
 
-        assertEquals(1, TrackPlans.validate(plans).size());
+        assertEquals(List.of(PlanProblem.DEFAULT_AUDIO_COUNT), TrackPlans.validate(plans));
     }
 
     @Test
@@ -196,7 +193,7 @@ class TrackPlansTest {
         List<TrackPlan> plans = plans();
         plans.get(2).setMakeDefault(true);
 
-        assertEquals(1, TrackPlans.validate(plans).size());
+        assertEquals(List.of(PlanProblem.DEFAULT_AUDIO_COUNT), TrackPlans.validate(plans));
     }
 
     @Test
@@ -214,7 +211,7 @@ class TrackPlansTest {
         plans.get(4).setMakeDefault(true);
         plans.get(5).setMakeDefault(true);
 
-        assertEquals(1, TrackPlans.validate(plans).size());
+        assertEquals(List.of(PlanProblem.MULTIPLE_DEFAULT_SUBTITLES), TrackPlans.validate(plans));
     }
 
     @Test
@@ -245,7 +242,7 @@ class TrackPlansTest {
     void differentTrackCountIsReported() {
         List<TrackPlan> shorter = plans().subList(0, 4);
 
-        assertEquals(Optional.of("inna liczba ścieżek: 4 zamiast 6"), TrackPlans.layoutDifference(plans(), shorter));
+        assertEquals(Optional.of(UserMessage.of("layout.trackCount", 4, 6)), TrackPlans.layoutDifference(plans(), shorter));
     }
 
     @Test
@@ -253,7 +250,7 @@ class TrackPlansTest {
         List<TrackPlan> other = new ArrayList<>(plans());
         other.set(2, plan(2, StreamType.AUDIO, "eac3", false));
 
-        assertEquals(Optional.of("ścieżka #2: kodek eac3 zamiast ac3"), TrackPlans.layoutDifference(plans(), other));
+        assertEquals(Optional.of(UserMessage.of("layout.codec", "2", "eac3", "ac3")), TrackPlans.layoutDifference(plans(), other));
     }
 
     @Test
@@ -261,7 +258,7 @@ class TrackPlansTest {
         List<TrackPlan> other = new ArrayList<>(plans());
         other.set(3, TrackPlan.defaultsFor(new StreamInfo(3, StreamType.AUDIO, "dts", null, 2, null, "eng", null, false)));
 
-        assertEquals(Optional.of("ścieżka #3: kanały 2 zamiast 6"), TrackPlans.layoutDifference(plans(), other));
+        assertEquals(Optional.of(UserMessage.of("layout.channels", "3", 2, 6)), TrackPlans.layoutDifference(plans(), other));
     }
 
     @Test
@@ -269,7 +266,7 @@ class TrackPlansTest {
         List<TrackPlan> other = new ArrayList<>(plans());
         other.set(4, TrackPlan.defaultsFor(new StreamInfo(4, StreamType.SUBTITLE, "subrip", null, 0, null, "pol", null, false)));
 
-        assertEquals(Optional.of("ścieżka #4: język pol zamiast eng"), TrackPlans.layoutDifference(plans(), other));
+        assertEquals(Optional.of(UserMessage.of("layout.language", "4", "pol", "eng")), TrackPlans.layoutDifference(plans(), other));
     }
 
     @Test
@@ -277,7 +274,7 @@ class TrackPlansTest {
         List<TrackPlan> other = new ArrayList<>(plans());
         other.set(5, plan(5, StreamType.AUDIO, "subrip", false));
 
-        assertEquals(Optional.of("ścieżka #5: inny typ ścieżki"), TrackPlans.layoutDifference(plans(), other));
+        assertEquals(Optional.of(UserMessage.of("layout.type", "5")), TrackPlans.layoutDifference(plans(), other));
     }
 
     // ---------------------------------------------------------------- copySettings (#59)

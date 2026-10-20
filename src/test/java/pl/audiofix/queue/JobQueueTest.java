@@ -12,6 +12,7 @@ import pl.audiofix.ffmpeg.CommandBuilder;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ffmpeg.FfprobeService;
 import pl.audiofix.ffmpeg.TestMedia;
+import pl.audiofix.model.UserMessage;
 import pl.audiofix.model.ConversionJob;
 import pl.audiofix.model.ConversionMode;
 import pl.audiofix.model.JobStatus;
@@ -190,7 +191,9 @@ class JobQueueTest {
 
         assertEquals(JobStatus.DONE, ok.getStatus());
         assertEquals(JobStatus.FAILED, broken.getStatus());
-        assertTrue(broken.getErrorMessage().contains("ffmpeg"), broken.getErrorMessage());
+        assertEquals("ffmpeg.failed", broken.getError().key(), broken.getError().toString());
+        assertTrue(String.valueOf(broken.getError().args().get(1)).contains("missing.mkv"),
+                "ffmpeg's own output stays in the message: " + broken.getError());
         assertFalse(Files.exists(broken.getOutput()), "partial output should be deleted");
         assertEquals(JobStatus.DONE, next.getStatus());
     }
@@ -211,7 +214,7 @@ class JobQueueTest {
         waitUntilIdle();
 
         assertEquals(JobStatus.FAILED, bad.getStatus());
-        assertEquals("Brak ffmpeg", bad.getErrorMessage());
+        assertEquals(UserMessage.of("error.unexpected", "Brak ffmpeg"), bad.getError(), "any other exception: its plain text");
         assertEquals(JobStatus.DONE, good.getStatus());
     }
 

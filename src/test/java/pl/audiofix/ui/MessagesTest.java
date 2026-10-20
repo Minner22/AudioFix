@@ -2,6 +2,8 @@ package pl.audiofix.ui;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import pl.audiofix.model.AudioFixException;
+import pl.audiofix.model.UserMessage;
 
 import java.util.ListResourceBundle;
 import java.util.Locale;
@@ -60,6 +62,29 @@ class MessagesTest {
         assertEquals("1 track", Messages.count("tracks.count", 1));
         assertEquals("3 tracks", Messages.count("tracks.count", 3));
         assertEquals("22 tracks", Messages.count("tracks.count", 22), "the Polish 'few' is plural in English too");
+    }
+
+    @Test
+    void messageFromModelIsTranslated() {
+        Messages.use(Locale.ENGLISH);
+
+        assertEquals("track #2: codec eac3 instead of ac3", Messages.get(UserMessage.of("layout.codec", "2", "eac3", "ac3")));
+    }
+
+    @Test
+    void ffmpegOutputStaysAsItIs() {
+        // ffmpeg's error text is an argument: only the sentence around it is translated
+        assertEquals("ffmpeg zakończył się błędem (kod 1):\nInvalid data found when processing input",
+                Messages.get(UserMessage.of("ffmpeg.failed", "1", "Invalid data found when processing input")));
+    }
+
+    @Test
+    void ourExceptionIsDescribedInTheLanguage() {
+        Messages.use(Locale.ENGLISH);
+        AudioFixException known = new AudioFixException("No ffprobe.exe in D:", UserMessage.of("ffmpeg.invalid.noFfprobe", "D:\\ffmpeg"));
+
+        assertEquals("ffprobe.exe not found in the folder: D:\\ffmpeg", Messages.describe(known));
+        assertEquals("disk full", Messages.describe(new IllegalStateException("disk full")), "any other: its own message");
     }
 
     @Test

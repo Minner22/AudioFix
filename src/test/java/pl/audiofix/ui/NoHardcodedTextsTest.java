@@ -16,27 +16,34 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * The UI code shows texts only through Messages (#29): no string literal in pl.audiofix.ui may hold
- * Polish letters or common Polish words. Comments and Javadoc do not count.
+ * Texts for the user come only from the translation files: no string literal in the UI (#29), the model,
+ * ffmpeg or the queue (#30) may hold Polish letters or common Polish words. Comments and Javadoc do not count.
  */
 class NoHardcodedTextsTest {
 
-    private static final Path UI = Path.of("src", "main", "java", "pl", "audiofix", "ui");
+    private static final Path SOURCES = Path.of("src", "main", "java", "pl", "audiofix");
+    private static final List<String> PACKAGES = List.of("ui", "model", "ffmpeg", "queue");
 
-    /**
-     * Files allowed to keep Polish words for now. LogLines recognizes the "Gotowe", "Błąd" and "Anulowano"
-     * lines ConversionJob writes; they become translated texts in #30, and this list then gets empty.
-     */
-    private static final Set<String> ALLOWED = Set.of("LogLines.java");
+    /** Files allowed to keep Polish words; empty since #30. */
+    private static final Set<String> ALLOWED = Set.of();
 
     private static final Pattern LITERAL = Pattern.compile("\"((?:[^\"\\\\]|\\\\.)*)\"");
     private static final Pattern POLISH = Pattern.compile(
             "[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ„”]|\\b(Oczekuje|Gotowe|Anulowano|Wideo|Napisy|Inne|Kopiuj|Wybierz|Filmy|Zapisz|Start konwersji)\\b");
 
     @Test
-    void uiCodeHasNoPolishTexts() throws IOException {
+    void codeHasNoPolishTexts() throws IOException {
         List<String> found = new ArrayList<>();
-        try (Stream<Path> files = Files.walk(UI)) {
+        for (String folder : PACKAGES) {
+            found.addAll(polishTextsIn(SOURCES.resolve(folder)));
+        }
+
+        assertEquals(List.of(), found, "texts for the user belong in messages.properties");
+    }
+
+    private static List<String> polishTextsIn(Path folder) throws IOException {
+        List<String> found = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(folder)) {
             for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
                 if (ALLOWED.contains(file.getFileName().toString())) {
                     continue;
@@ -53,8 +60,7 @@ class NoHardcodedTextsTest {
                 }
             }
         }
-
-        assertEquals(List.of(), found, "texts for the user belong in messages.properties");
+        return found;
     }
 
     @Test

@@ -59,6 +59,19 @@ class LogLinesTest {
     }
 
     @Test
+    void resultLinesAreRecognizedInEnglish() {
+        // MainController writes them in the current language (#30)
+        Messages.use(java.util.Locale.ENGLISH);
+        try {
+            assertEquals(LogLines.Kind.SUCCESS, LogLines.kind("Done: Drive_fixed.mkv"));
+            assertEquals(LogLines.Kind.ERROR, LogLines.kind("Error: ffmpeg exited with an error (code 1):"));
+            assertEquals(LogLines.Kind.WARNING, LogLines.kind("Cancelled"));
+        } finally {
+            Messages.use(java.util.Locale.getDefault());
+        }
+    }
+
+    @Test
     void doneIsSuccess() {
         assertEquals(LogLines.Kind.SUCCESS, LogLines.kind("Gotowe: Drive_fixed.mkv"));
     }
