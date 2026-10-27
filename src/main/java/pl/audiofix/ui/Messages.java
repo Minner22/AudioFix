@@ -41,7 +41,7 @@ public final class Messages {
 
     public static String count(String key, long n) {
 
-        return get(key + "." + TextFormats.pluralForm(n), n);
+        return get(key + "." + TextFormats.pluralForm(locale, n), n);
     }
 
     public static String get(UserMessage message) {

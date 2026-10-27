@@ -2,6 +2,7 @@ package pl.audiofix.ui;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
@@ -11,8 +12,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,15 +34,35 @@ class TranslationFilesTest {
     private static final Path FXML_FOLDER = Path.of("src", "main", "resources", "pl", "audiofix", "ui");
     private static final Pattern FXML_TEXT = Pattern.compile("\\b(text|promptText)=\"([^\"]*)\"");
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\d+[^}]*}");
+    /** A counted text for Messages.count: "tracks.count.few" is the "few" form of "tracks.count" (#32). */
+    private static final Pattern COUNTED = Pattern.compile("(.+\\.count)\\.([a-z]+)");
 
     // ---------------------------------------------------------------- the two languages
 
     @Test
     void bothLanguagesHaveTheSameKeys() throws IOException {
-        Set<String> polish = load("messages.properties").stringPropertyNames();
-        Set<String> english = load("messages_en.properties").stringPropertyNames();
+        // counted texts are compared by name only: each language has its own noun forms, see below
+        Set<String> polish = withoutForms(load("messages.properties").stringPropertyNames());
+        Set<String> english = withoutForms(load("messages_en.properties").stringPropertyNames());
 
-        assertEquals(new TreeSet<>(polish), new TreeSet<>(english), "a key missing in one of the languages");
+        assertEquals(polish, english, "a key missing in one of the languages");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"messages.properties, pl", "messages_en.properties, en"})
+    void countedTextsHaveExactlyTheFormsOfTheirLanguage(String file, String language) throws IOException {
+        // a missing form throws MissingResourceException for some counts only, e.g. "22 ścieżki" but not "5 ścieżek"
+        Map<String, Set<String>> forms = new TreeMap<>();
+        for (String key : load(file).stringPropertyNames()) {
+            Matcher counted = COUNTED.matcher(key);
+            if (counted.matches()) {
+                forms.computeIfAbsent(counted.group(1), name -> new TreeSet<>()).add(counted.group(2));
+            }
+        }
+
+        assertTrue(forms.containsKey("tracks.count"), forms.toString());
+        forms.forEach((name, found) ->
+                assertEquals(new TreeSet<>(TextFormats.pluralForms(Locale.of(language))), found, name + " in " + file));
     }
 
     @ParameterizedTest
@@ -58,7 +82,9 @@ class TranslationFilesTest {
         Properties english = load("messages_en.properties");
 
         for (String key : polish.stringPropertyNames()) {
-            assertEquals(placeholders(polish.getProperty(key)), placeholders(english.getProperty(key)), key);
+            if (english.containsKey(key)) {   // "tracks.count.few" is Polish only
+                assertEquals(placeholders(polish.getProperty(key)), placeholders(english.getProperty(key)), key);
+            }
         }
     }
 
@@ -112,6 +138,15 @@ class TranslationFilesTest {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    private static Set<String> withoutForms(Set<String> keys) {
+        Set<String> names = new TreeSet<>();
+        for (String key : keys) {
+            Matcher counted = COUNTED.matcher(key);
+            names.add(counted.matches() ? counted.group(1) : key);
+        }
+        return names;
+    }
 
     private static Properties load(String file) throws IOException {
         try (InputStream in = Messages.class.getResourceAsStream("/pl/audiofix/i18n/" + file)) {

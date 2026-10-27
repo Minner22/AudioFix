@@ -7,6 +7,8 @@ import pl.audiofix.model.MediaInfo;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,6 +30,23 @@ class TextFormatsTest {
             """)
     void sizeLikeWindowsExplorer(long bytes, String expected) {
         assertEquals(expected, TextFormats.fileSize(bytes));
+    }
+
+    @ParameterizedTest(name = "{0} B -> \"{1}\" in English")
+    @CsvSource(delimiter = '|', textBlock = """
+            512            | 512 B
+            1536           | 1.5 KB
+            1503238553     | 1.4 GB
+            34789235712    | 32.4 GB
+            """)
+    void sizeHasTheDecimalPointOfTheLanguage(long bytes, String expected) {
+        inEnglish(() -> assertEquals(expected, TextFormats.fileSize(bytes)));
+    }
+
+    @Test
+    void sizeFollowsALanguageSwitch() {
+        inEnglish(() -> assertEquals("1.5 KB", TextFormats.fileSize(1536)));
+        assertEquals("1,5 KB", TextFormats.fileSize(1536), "back in Polish");
     }
 
     // ---------------------------------------------------------------- Polish plural
@@ -58,16 +77,75 @@ class TextFormatsTest {
 
     @ParameterizedTest(name = "{0} -> {1}")
     @CsvSource({
-            "1,   one",
-            "2,   few",
-            "4,   few",
-            "5,   many",
-            "12,  many",
-            "22,  few",
-            "0,   many",
+            "0,    many",
+            "1,    one",
+            "2,    few",
+            "4,    few",
+            "5,    many",
+            "11,   many",
+            "12,   many",
+            "13,   many",
+            "14,   many",
+            "21,   many",
+            "22,   few",
+            "24,   few",
+            "25,   many",
+            "101,  many",
+            "112,  many",
+            "122,  few",
+            "1002, few",
     })
-    void pluralFormNamesTheKeySuffix(long n, String form) {
-        assertEquals(form, TextFormats.pluralForm(n));
+    void polishPluralForm(long n, String form) {
+        assertEquals(form, TextFormats.pluralForm(Locale.of("pl"), n));
+        assertEquals(form, TextFormats.pluralForm(Locale.of("pl", "PL"), n), "the country does not matter");
+    }
+
+    @ParameterizedTest(name = "{0} -> {1}")
+    @CsvSource({
+            "0,    many",
+            "1,    one",
+            "2,    many",
+            "4,    many",
+            "21,   many",
+            "22,   many",
+            "101,  many",
+    })
+    void englishPluralForm(long n, String form) {
+        assertEquals(form, TextFormats.pluralForm(Locale.ENGLISH, n));
+        assertEquals(form, TextFormats.pluralForm(Locale.US, n));
+    }
+
+    @Test
+    void formsOfEachLanguage() {
+        assertEquals(Set.of("one", "few", "many"), TextFormats.pluralForms(Locale.of("pl")));
+        assertEquals(Set.of("one", "many"), TextFormats.pluralForms(Locale.ENGLISH));
+    }
+
+    // ---------------------------------------------------------------- English plural (#32)
+
+    @ParameterizedTest(name = "{0} -> \"{1}\"")
+    @CsvSource(delimiter = '|', textBlock = """
+            0    | 0 tracks
+            1    | 1 track
+            2    | 2 tracks
+            3    | 3 tracks
+            22   | 22 tracks
+            25   | 25 tracks
+            """)
+    void countUsesEnglishNounForms(long n, String expected) {
+        inEnglish(() -> assertEquals(expected, Messages.count("tracks.count", n)));
+    }
+
+    @ParameterizedTest(name = "{0} tracks")
+    @CsvSource(delimiter = '|', textBlock = """
+            1  | Wczytano Drive.mkv: 1 ścieżka  | Loaded Drive.mkv: 1 track
+            3  | Wczytano Drive.mkv: 3 ścieżki  | Loaded Drive.mkv: 3 tracks
+            22 | Wczytano Drive.mkv: 22 ścieżki | Loaded Drive.mkv: 22 tracks
+            25 | Wczytano Drive.mkv: 25 ścieżek | Loaded Drive.mkv: 25 tracks
+            """)
+    void loadedLineInBothLanguages(long n, String polish, String english) {
+        assertEquals(polish, Messages.get("log.loaded", "Drive.mkv", Messages.count("tracks.count", n)));
+        inEnglish(() -> assertEquals(english, Messages.get("log.loaded", "Drive.mkv", Messages.count("tracks.count", n))));
     }
 
     // ---------------------------------------------------------------- container
@@ -124,6 +202,15 @@ class TextFormatsTest {
     void durationIsRoundedToWholeSeconds() {
         assertEquals("01:00", TextFormats.duration(java.time.Duration.ofMillis(59_600)));
         assertEquals("00:59", TextFormats.duration(java.time.Duration.ofMillis(59_400)));
+    }
+
+    private static void inEnglish(Runnable check) {
+        Messages.use(Locale.ENGLISH);
+        try {
+            check.run();
+        } finally {
+            Messages.use(Locale.getDefault());
+        }
     }
 
     private static MediaInfo media(long size, String formatName) {
