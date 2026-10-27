@@ -6,11 +6,14 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.skin.ComboBoxListViewSkin;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
@@ -170,23 +173,56 @@ class MainLayoutTest {
 
     // ---------------------------------------------------------------- smallest window
 
-    @Test
-    void smallestWindowCutsNoButtonOrHeader() throws Exception {
-        load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
-        add(LONG_NAME);
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("themesAndLanguages")
+    void smallestWindowCutsNoButtonOrHeader(Theme theme, Locale language) throws Exception {
 
-        // the file name may be shortened, list items have their own test, table columns are #45
-        List<String> cut = callOnFxThread(() -> java.util.stream.Stream.of(".button", ".label")
-                .flatMap(selector -> root.lookupAll(selector).stream())
-                .filter(Node::isVisible)
-                .filter(node -> node != label("tracksFileLabel"))
-                .filter(node -> !isInside(node, "queueList") && !isInside(node, "trackTable"))
-                .map(Labeled.class::cast)
-                .filter(labeled -> labeled.getText() != null && !labeled.getText().isEmpty())
-                .filter(labeled -> !labeled.getText().equals(shownText(labeled)))
-                .map(labeled -> labeled.getText() + " -> " + shownText(labeled))
-                .toList());
-        assertEquals(List.of(), cut);
+        inThemeAndLanguage(theme, language, () -> {
+            load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
+            add(LONG_NAME);
+
+            // the file name may be shortened, list items have their own test, table columns are #45
+            List<String> cut = callOnFxThread(() -> Stream.of(".button", ".label", ".toggle-button", ".menu-button")
+                    .flatMap(selector -> root.lookupAll(selector).stream())
+                    .distinct()
+                    .filter(Node::isVisible)
+                    .filter(node -> node != label("tracksFileLabel"))
+                    .filter(node -> !isInside(node, "queueList") && !isInside(node, "trackTable"))
+                    .filter(Labeled.class::isInstance)
+                    .map(Labeled.class::cast)
+                    .filter(labeled -> labeled.getText() != null && !labeled.getText().isEmpty())
+                    .filter(labeled -> !labeled.getText().equals(shownText(labeled)))
+                    .map(labeled -> labeled.getText() + " -> " + shownText(labeled))
+                    .toList());
+            assertEquals(List.of(), cut, theme + " " + language);
+        });
+    }
+
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("themesAndLanguages")
+    void smallestWindowCutsNoQueueStatusOrTrackTypeOrAction(Theme theme, Locale language) throws Exception {
+
+        inThemeAndLanguage(theme, language, () -> {
+            load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
+            add(LONG_NAME);
+
+            List<String> cut = callOnFxThread(() -> Stream.of(
+                            lookup("queueList", Node.class).lookupAll(".label").stream()
+                                    .filter(node -> !node.getStyleClass().contains("queue-name")),
+                            columnCells("typeColumn"),
+                            columnCells("actionColumn")
+                                    .map(cell -> ((TableCell<?, ?>) cell).getGraphic())
+                                    .filter(graphic -> graphic instanceof ComboBox<?>)
+                                    .map(combo -> ((ComboBoxListViewSkin<?>) ((ComboBox<?>) combo).getSkin()).getDisplayNode()))
+                    .flatMap(nodes -> nodes)
+                    .filter(MainLayoutTest::isShown)
+                    .map(Labeled.class::cast)
+                    .filter(labeled -> labeled.getText() != null && !labeled.getText().isEmpty())
+                    .filter(labeled -> !labeled.getText().equals(shownText(labeled)))
+                    .map(labeled -> labeled.getText() + " -> " + shownText(labeled))
+                    .toList());
+            assertEquals(List.of(), cut, theme + " " + language);
+        });
     }
 
     @Test
@@ -219,12 +255,8 @@ class MainLayoutTest {
     @ParameterizedTest(name = "{0} {1}")
     @MethodSource("themesAndLanguages")
     void smallestWindowFitsTrackTableWithoutCuttingHeaders(Theme theme, Locale language) throws Exception {
-        onFxThread(() -> {
-            ThemeFonts.load();   // the dark theme's Geist is wider than Segoe UI
-            Theme.setCurrent(theme);
-            Messages.use(language);   // "Channels" and "Language" are wider than "Kanały" and "Język" (#28)
-        });
-        try {
+
+        inThemeAndLanguage(theme, language, () -> {
             load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
             add(LONG_NAME);
             TableView<?> table = lookup("trackTable", TableView.class);
@@ -238,8 +270,47 @@ class MainLayoutTest {
                     .map(Label::getText)
                     .toList());
             assertEquals(List.of(), cut, "column headers shortened in " + theme + " " + language);
-        }
-        finally {
+        });
+    }
+
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("themesAndLanguages")
+    void smallestWindowWrapsEmptyListTexts(Theme theme, Locale language) throws Exception {
+
+        inThemeAndLanguage(theme, language, () -> {
+            load(MIN_SCENE_WIDTH, MIN_SCENE_HEIGHT);
+
+            for (String list : List.of("queueList", "trackTable")) {
+                Label placeholder = callOnFxThread(() -> (Label) (list.equals("queueList")
+                        ? queueList().getPlaceholder()
+                        : lookup("trackTable", TableView.class).getPlaceholder()));
+                assertTrue(callOnFxThread(placeholder::isWrapText), list);
+                assertEquals(List.of(placeholder.getText()), callOnFxThread(() -> placeholder.lookupAll(".text").stream()
+                        .map(text -> ((Text) text).getText().replace("\n", " ").replaceAll(" +", " ").strip())
+                        .toList()), list + " " + theme + " " + language);
+            }
+        });
+    }
+
+    private java.util.stream.Stream<Node> columnCells(String columnId) {
+        return lookup("trackTable", Node.class).lookupAll(".table-cell").stream()
+                .filter(node -> node instanceof TableCell<?, ?> cell && cell.getTableColumn() != null
+                        && columnId.equals(cell.getTableColumn().getId()) && !cell.isEmpty());
+    }
+
+    private interface Check {
+        void run() throws Exception;
+    }
+
+    private static void inThemeAndLanguage(Theme theme, Locale language, Check check) throws Exception {
+        onFxThread(() -> {
+            ThemeFonts.load();
+            Theme.setCurrent(theme);
+            Messages.use(language);
+        });
+        try {
+            check.run();
+        } finally {
             onFxThread(() -> {
                 Theme.setCurrent(Theme.LIGHT);
                 Messages.use(Locale.getDefault());
@@ -322,6 +393,15 @@ class MainLayoutTest {
         assertNotNull(node, "no node with fx:id=" + id);
         assertTrue(type.isInstance(node), id + " is " + node.getClass().getSimpleName());
         return type.cast(node);
+    }
+
+    private static boolean isShown(Node node) {
+        for (Node current = node; current != null; current = current.getParent()) {
+            if (!current.isVisible()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isInside(Node node, String parentId) {

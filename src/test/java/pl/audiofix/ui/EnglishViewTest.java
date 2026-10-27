@@ -77,7 +77,7 @@ class EnglishViewTest {
     void aboutWindowIsInEnglish() {
         assertEquals("Author: Minner22", ((Label) about.lookup("#authorLabel")).getText());
         assertEquals("Log folder", button(about, "logsButton").getText());
-        assertEquals("Copy information", button(about, "copyButton").getText());
+        assertEquals("Copy details", button(about, "copyButton").getText());
         assertEquals("Close", button(about, "closeButton").getText());
     }
 

@@ -32,7 +32,7 @@ Plan wydań (milestone'y na GitHubie):
 - [ ] lokalnie: `git checkout master`, `git pull`, `git status` bez zmian,
 - [ ] ręczny test na prawdziwym filmie: wczytanie, zmiana ścieżek, konwersja, anulowanie,
 - [ ] wynik odtworzony na telewizorze,
-- [ ] ✅ przy wydawanej wersji w sekcji „Roadmapa” w `README.md`.
+- [ ] ✅ przy wydawanej wersji w sekcji „Roadmap” w `README.md` i „Roadmapa” w `README.pl.md`.
 
 ## Wydanie krok po kroku (PowerShell)
 

@@ -207,7 +207,7 @@ class TrackTableTest {
         ComboBox<?> video = actionIn(0);
         ComboBox<?> subtitles = actionIn(4);
 
-        assertEquals("Kopiuj (passthrough)", video.getValue());
+        assertEquals("Kopiuj", video.getValue());
         assertEquals("Kopiuj", subtitles.getValue());
         assertTrue(video.isDisabled());
         assertTrue(subtitles.isDisabled());

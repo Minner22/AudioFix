@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -167,14 +168,27 @@ public class MainController {
 
     private void refreshTexts() {
 
-        queueList.setPlaceholder(new Label(Messages.get("queue.placeholder")));
-        trackTable.setPlaceholder(new Label(Messages.get("tracks.placeholder")));
+        setPlaceholders();
         LogConsole.translate(logList);
         updateQueueHeader();
         updateTracksHeader();
         queueList.refresh();
         trackTable.refresh();
         progressView.refresh();
+    }
+
+    private void setPlaceholders() {
+
+        queueList.setPlaceholder(placeholder("queue.placeholder"));
+        trackTable.setPlaceholder(placeholder("tracks.placeholder"));
+    }
+
+    private static Label placeholder(String key) {
+
+        Label text = new Label(Messages.get(key));
+        text.setWrapText(true);
+        text.setTextAlignment(TextAlignment.CENTER);
+        return text;
     }
 
     public void shutdown() {
@@ -187,7 +201,7 @@ public class MainController {
 
         queueList.setItems(queue.getJobs());
         queueList.setCellFactory(list -> new QueueCell());
-        queueList.setPlaceholder(new Label(Messages.get("queue.placeholder")));
+        setPlaceholders();
         queueList.getSelectionModel().selectedItemProperty().addListener((observable, previous, job) -> showJob(job));
 
         queue.getJobs().addListener((ListChangeListener<ConversionJob>) change -> {
@@ -208,7 +222,6 @@ public class MainController {
         });
         LogConsole.configure(logList);
 
-        trackTable.setPlaceholder(new Label(Messages.get("tracks.placeholder")));
         TrackTableConfigurer.configureTable(trackTable);
         TrackTableConfigurer.configureKeep(keepColumn);
         TrackTableConfigurer.configureIndex(indexColumn);
@@ -479,7 +492,7 @@ public class MainController {
             }
         }
 
-        String result = Messages.get("applyToAll.applied", applied);
+        String result = Messages.count("applyToAll.count", applied);
         if (skipped.isEmpty()) {
             showInfo(Messages.get("tracks.applyToAll"), result);
         } else {
