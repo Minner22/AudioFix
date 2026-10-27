@@ -65,6 +65,14 @@ final class LogConsole {
         });
     }
 
+    /** The context menu in the current language (#31). */
+    static void translate(ListView<String> console) {
+
+        List<MenuItem> items = console.getContextMenu().getItems();
+        items.get(0).setText(Messages.get("console.copy"));
+        items.get(1).setText(Messages.get("console.copyAll"));
+    }
+
     /** Selected lines in the order they are in the log (selected indices are always ascending), one per line. */
     static String selectedText(ListView<String> console) {
 

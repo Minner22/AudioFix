@@ -550,6 +550,17 @@
     -fx-font-weight: bold;
 }
 
+/* PL | EN (#31): two joined toggles, the chosen language in the accent color */
+.language-switch > .toggle-button {
+    -fx-padding: 5 9 5 9;
+    -fx-font-weight: bold;
+}
+
+.language-switch > .toggle-button:selected {
+    -fx-background-color: -af-accent-hover, -af-accent;
+    -fx-text-fill: -af-on-accent;
+}
+
 /* output path and [Zmień…] share one edge */
 .joined-left {
     -fx-background-radius: 3 0 0 3, 2 0 0 2;

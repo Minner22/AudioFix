@@ -53,6 +53,13 @@ final class ProgressView {
         update();
     }
 
+    void refresh() {
+
+        if (job != null) {
+            update();
+        }
+    }
+
     private void update() {
 
         boolean running = job.getStatus() == JobStatus.RUNNING;

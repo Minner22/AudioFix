@@ -58,6 +58,9 @@ public class MainController {
     @FXML private RadioMenuItem systemThemeItem;
     @FXML private RadioMenuItem lightThemeItem;
     @FXML private RadioMenuItem darkThemeItem;
+    @FXML private ToggleGroup languageGroup;
+    @FXML private ToggleButton polishButton;
+    @FXML private ToggleButton englishButton;
 
     @FXML private Label queueTitleLabel;
     @FXML private Label queueRemainingLabel;
@@ -138,6 +141,40 @@ public class MainController {
                 ThemeChoice.DARK, darkThemeItem);
         items.get(themes.getChoice()).setSelected(true);
         items.forEach((choice, item) -> item.setOnAction(event -> themes.setChoice(choice)));
+    }
+
+    public void setLanguageSettings(LanguageSettings languages, Map<String, Object> view) {
+
+        Map<Language, ToggleButton> buttons = Map.of(Language.POLISH, polishButton, Language.ENGLISH, englishButton);
+        buttons.get(languages.getLanguage()).setSelected(true);
+
+        languageGroup.selectedToggleProperty().addListener((observable, previous, selected) -> {
+            if (selected == null) {
+                previous.setSelected(true);
+                return;
+            }
+            languages.setLanguage(selected == polishButton ? Language.POLISH : Language.ENGLISH);
+        });
+        languages.languageProperty().addListener((observable, old, language) -> switchLanguage(language, view));
+    }
+
+    void switchLanguage(Language language, Map<String, Object> view) {
+
+        Messages.use(language.locale());
+        FxmlTexts.translate(MainController.class.getResource("main-view.fxml"), view);
+        refreshTexts();
+    }
+
+    private void refreshTexts() {
+
+        queueList.setPlaceholder(new Label(Messages.get("queue.placeholder")));
+        trackTable.setPlaceholder(new Label(Messages.get("tracks.placeholder")));
+        LogConsole.translate(logList);
+        updateQueueHeader();
+        updateTracksHeader();
+        queueList.refresh();
+        trackTable.refresh();
+        progressView.refresh();
     }
 
     public void shutdown() {
