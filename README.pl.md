@@ -135,7 +135,7 @@ a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/relea
 - ✅ **0.4.0, wygląd:** nowy, płaski wygląd wg projektu (jasny i ciemny motyw zgodny z Windowsem),
   szacowany czas do końca konwersji, kolorowana konsola logów.
 - ✅ **1.0.0, instalator:** instalator `.exe` z wbudowaną Javą i ffmpeg, automatyczne wydania na GitHubie.
-- **1.1.0, wielojęzyczność:** interfejs po polsku i angielsku z wyborem języka.
+- ✅ **1.1.0, wielojęzyczność:** interfejs po polsku i angielsku z wyborem języka.
 
 Proces wydawania nowych wersji: [RELEASING.md](RELEASING.md).
 

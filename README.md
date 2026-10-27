@@ -135,7 +135,7 @@ finished versions are on the [Releases](https://github.com/Minner22/AudioFix/rel
 - ✅ **0.4.0, look:** new flat design (light and dark theme following Windows),
   estimated time left, colored log console.
 - ✅ **1.0.0, installer:** `.exe` installer with its own Java and ffmpeg, automatic releases on GitHub.
-- **1.1.0, languages:** the interface in Polish and English with a language switch.
+- ✅ **1.1.0, languages:** the interface in Polish and English with a language switch.
 
 How new versions are released: [RELEASING.md](RELEASING.md) (in Polish).
 
