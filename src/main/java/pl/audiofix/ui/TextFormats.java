@@ -5,12 +5,13 @@ import pl.audiofix.model.MediaInfo;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 final class TextFormats {
 
-    private static final Locale POLISH = Locale.forLanguageTag("pl-PL");
+    private static final String POLISH = "pl";
     private static final List<String> UNITS = List.of("B", "KB", "MB", "GB", "TB");
 
     private TextFormats() {
@@ -41,18 +42,26 @@ final class TextFormats {
             unit++;
         }
 
-        return String.format(POLISH, "%.1f %s", value, UNITS.get(unit));
+        return String.format(Messages.locale(), "%.1f %s", value, UNITS.get(unit));   // "1,5 GB", "1.5 GB" (#32)
     }
 
-    static String pluralForm(long n) {
+    static String pluralForm(Locale language, long n) {
 
-        long lastDigit = n % 10;
-        long lastTwo = n % 100;
         if (n == 1) {
             return "one";
         }
+        if (!POLISH.equals(language.getLanguage())) {
+            return "many";
+        }
 
+        long lastDigit = n % 10;
+        long lastTwo = n % 100;
         return lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14) ? "few" : "many";
+    }
+
+    static Set<String> pluralForms(Locale language) {
+
+        return POLISH.equals(language.getLanguage()) ? Set.of("one", "few", "many") : Set.of("one", "many");
     }
 
     static String containerName(String formatLongName) {
