@@ -12,6 +12,7 @@ import pl.audiofix.model.MediaInfo;
 import pl.audiofix.model.UserMessage;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -163,6 +164,32 @@ class ProgressViewTest {
     // ---------------------------------------------------------------- helpers
 
     /** Marks the job running at the current fake time and shows it, as the queue does. */
+    // ---------------------------------------------------------------- language switch (#31)
+
+    @Test
+    void refreshShowsTheRunningFileInTheNewLanguage() throws Exception {
+        running(ProgressTextsTest.drive(ConversionMode.PLANNED));
+
+        try {
+            onFxThread(() -> {
+                Messages.use(Locale.ENGLISH);
+                view.refresh();
+            });
+
+            assertEquals("Converting: tracks #1 and #3 (PCM 24-bit)", status.getText());
+        } finally {
+            Messages.use(Locale.getDefault());
+        }
+    }
+
+    @Test
+    void refreshBeforeAnyFileLeavesTheBarEmpty() throws Exception {
+        onFxThread(() -> view.refresh());
+
+        assertEquals("", status.getText());
+        assertEquals("", percent.getText());
+    }
+
     private ConversionJob running(ConversionJob job) throws Exception {
         onFxThread(() -> {
             job.markRunning();

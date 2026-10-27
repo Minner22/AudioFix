@@ -15,6 +15,21 @@
                 <graphic><Icon glyph="SETTINGS"/></graphic>
             </Button>
             <Region HBox.hgrow="ALWAYS"/>
+            <HBox styleClass="language-switch" alignment="CENTER">
+                <fx:define>
+                    <ToggleGroup fx:id="languageGroup"/>
+                </fx:define>
+                <ToggleButton fx:id="polishButton" text="%toolbar.language.polish" styleClass="joined-left" minWidth="-Infinity" toggleGroup="$languageGroup">
+                    <tooltip>
+                        <Tooltip text="%toolbar.language.polish.tooltip"/>
+                    </tooltip>
+                </ToggleButton>
+                <ToggleButton fx:id="englishButton" text="%toolbar.language.english" styleClass="joined-right" minWidth="-Infinity" toggleGroup="$languageGroup">
+                    <tooltip>
+                        <Tooltip text="%toolbar.language.english.tooltip"/>
+                    </tooltip>
+                </ToggleButton>
+            </HBox>
             <MenuButton fx:id="themeButton" text="%toolbar.theme" minWidth="-Infinity">
                 <graphic><Icon glyph="THEME"/></graphic>
                 <fx:define>
@@ -76,7 +91,7 @@
                     </columns>
                 </TableView>
                 <HBox styleClass="panel-footer" alignment="CENTER_LEFT" spacing="8">
-                    <Label text="%output.label" styleClass="field-label" minWidth="-Infinity"/>
+                    <Label fx:id="outputLabel" text="%output.label" styleClass="field-label" minWidth="-Infinity"/>
                     <HBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
                         <TextField fx:id="outputField" HBox.hgrow="ALWAYS" styleClass="path-field,joined-left"/>
                         <Button fx:id="changeOutputButton" text="%output.change" minWidth="-Infinity" styleClass="joined-right" onAction="#onChangeOutput"/>

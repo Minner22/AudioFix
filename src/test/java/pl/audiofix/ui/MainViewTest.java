@@ -195,12 +195,15 @@ class MainViewTest {
         HBox toolBar = lookup("toolBar", HBox.class);
         List<Node> items = toolBar.getChildren();
 
-        assertEquals(5, items.size(), items.toString());
+        assertEquals(6, items.size(), items.toString());
         assertEquals("addFilesButton", items.get(0).getId());
         assertEquals("ffmpegSettingsButton", items.get(1).getId());
         assertEquals(Priority.ALWAYS, HBox.getHgrow(items.get(2)), "spacer pushes the rest to the right");
-        assertEquals("themeButton", items.get(3).getId());
-        assertEquals("aboutButton", items.get(4).getId());
+        assertTrue(items.get(3).getStyleClass().contains("language-switch"), "PL | EN before the theme (#31)");
+        assertEquals(List.of("polishButton", "englishButton"),
+                ((HBox) items.get(3)).getChildren().stream().map(Node::getId).toList());
+        assertEquals("themeButton", items.get(4).getId());
+        assertEquals("aboutButton", items.get(5).getId());
     }
 
     // ---------------------------------------------------------------- theme menu (#35)

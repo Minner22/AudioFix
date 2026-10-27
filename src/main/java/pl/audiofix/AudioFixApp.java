@@ -12,6 +12,7 @@ import pl.audiofix.ffmpeg.FfmpegLocator;
 import pl.audiofix.ffmpeg.FfmpegPaths;
 import pl.audiofix.ui.AppIcon;
 import pl.audiofix.ui.FfmpegSetup;
+import pl.audiofix.ui.LanguageSettings;
 import pl.audiofix.ui.MainController;
 import pl.audiofix.ui.Messages;
 import pl.audiofix.ui.theme.Theme;
@@ -41,6 +42,9 @@ public class AudioFixApp extends Application {
 
         log.info("AudioFix {} starting (Java {})", AppVersion.current(), Runtime.version());
 
+        LanguageSettings languages = new LanguageSettings();
+        Messages.use(languages.getLanguage().locale());
+
         ThemeFonts.load();
         ThemeManager themes = new ThemeManager();
         Theme.currentProperty().bind(themes.themeProperty());   // before the first alert, ffmpeg setup may show one
@@ -57,6 +61,7 @@ public class AudioFixApp extends Application {
         controller.setFfmpegPaths(ffmpegPaths.get());
         controller.setHostServices(getHostServices());
         controller.setThemeManager(themes);
+        controller.setLanguageSettings(languages, loader.getNamespace());
 
         primaryStage.setScene(createScene(root));
         configureWindow(primaryStage);
