@@ -81,8 +81,8 @@
                     <columns>
                         <TableColumn fx:id="keepColumn" text="%table.column.keep" minWidth="60" prefWidth="60" maxWidth="60"/>
                         <TableColumn fx:id="indexColumn" text="%table.column.index" minWidth="32" prefWidth="32" maxWidth="32"/>
-                        <TableColumn fx:id="typeColumn" text="%table.column.type" minWidth="60" prefWidth="60" maxWidth="60"/>
-                        <TableColumn fx:id="codecColumn" text="%table.column.codec" minWidth="110" prefWidth="170"/>
+                        <TableColumn fx:id="typeColumn" text="%table.column.type" minWidth="76" prefWidth="76" maxWidth="76"/>
+                        <TableColumn fx:id="codecColumn" text="%table.column.codec" minWidth="100" prefWidth="170"/>
                         <TableColumn fx:id="channelsColumn" text="%table.column.channels" minWidth="68" prefWidth="68" maxWidth="68"/>
                         <TableColumn fx:id="languageColumn" text="%table.column.language" minWidth="72" prefWidth="72" maxWidth="72"/>
                         <TableColumn fx:id="titleColumn" text="%table.column.title" minWidth="70" prefWidth="200"/>

@@ -2,93 +2,98 @@
 
 [![Build](https://github.com/Minner22/AudioFix/actions/workflows/build.yml/badge.svg)](https://github.com/Minner22/AudioFix/actions/workflows/build.yml)
 
-Prosta aplikacja desktopowa do poprawiania ścieżek dźwiękowych w filmach tak, żeby dało się je odtworzyć na telewizorze,
-który nie obsługuje wszystkich formatów audio (najczęściej **DTS**).
+**English** | [Polski](README.pl.md)
 
-Zamiast ręcznie wpisywać w terminalu ścieżkę do `ffmpeg`, nazwę pliku i parametry konwersji, wystarczy wyklikać plik,
-wybrać ścieżki i kliknąć **Start**.
+A simple desktop app that fixes the audio tracks of videos so they play on a TV
+that does not support every audio format (most often **DTS**).
 
-## Funkcje
+Instead of typing the path to `ffmpeg`, the file name and the conversion options in a terminal,
+you pick a file, choose the tracks and click **Start**.
 
-- Wybór jednego lub wielu plików w natywnym oknie Windowsa (`.mkv`, `.mp4`, `.m2ts`).
-- Podgląd wszystkich ścieżek pliku (wideo, audio, napisy): kodek, liczba kanałów, język i tytuł.
-- **Podświetlanie ścieżek DTS** (także DTS-HD MA / DTS:X) z automatycznie ustawioną konwersją.
-- Konwersja wybranych ścieżek audio do formatu:
-  - **PCM 24-bit** (`pcm_s24le`), domyślnie,
+The app speaks English and Polish: switch with **PL | EN** in the toolbar, at any time, without a restart.
+
+## Features
+
+- Pick one or more files in the native Windows dialog (`.mkv`, `.mp4`, `.m2ts`) or drop them on the window.
+- See all tracks of a file (video, audio, subtitles): codec, channels, language and title.
+- **DTS tracks are highlighted** (also DTS-HD MA / DTS:X) and set to be converted.
+- Convert chosen audio tracks to:
+  - **PCM 24-bit** (`pcm_s24le`), the default,
   - E-AC3 (Dolby Digital Plus),
   - AC3 (Dolby Digital),
   - AAC.
-- Usuwanie zbędnych ścieżek audio i napisów.
-- Zmiana ścieżki domyślnej (audio i napisy).
-- Wideo, rozdziały i załączniki (np. fonty do napisów) są kopiowane bez zmian, więc konwersja jest szybka.
-- Wynik zapisywany jest jako nowy plik `.mkv`, domyślnie obok oryginału z suffixem `_fixed`
-  (np. `Film.mkv` → `Film_fixed.mkv`), z możliwością zmiany miejsca i nazwy.
-- **Kolejka**: wiele plików przetwarzanych jeden po drugim, z paskiem postępu i logiem.
+- Remove audio and subtitle tracks you do not need.
+- Change the default track (audio and subtitles).
+- Video, chapters and attachments (e.g. subtitle fonts) are copied as they are, so the conversion is fast.
+- The result is a new `.mkv` file, by default next to the original with the `_fixed` suffix
+  (e.g. `Film.mkv` → `Film_fixed.mkv`); you can change the place and the name.
+- **Queue**: many files converted one after another, with a progress bar and a log.
 
 ## Stack
 
-| Warstwa | Technologia |
+| Layer | Technology |
 |---|---|
-| Język | Java 25 |
+| Language | Java 25 |
 | UI | JavaFX 25 + FXML (Scene Builder) |
 | Build | Maven |
-| Analiza plików | `ffprobe` (JSON) + Jackson |
-| Konwersja | `ffmpeg` uruchamiany przez `ProcessBuilder` |
-| Testy | JUnit 5 |
-| Dystrybucja | `jpackage` (instalator `.exe` z wbudowanym JRE) |
+| Reading files | `ffprobe` (JSON) + Jackson |
+| Conversion | `ffmpeg` run with `ProcessBuilder` |
+| Tests | JUnit 5 |
+| Distribution | `jpackage` (`.exe` installer with its own JRE) |
 
-## Wymagania
+## Requirements
 
 - JDK 25
 - Maven 3.9+
-- [ffmpeg](https://ffmpeg.org/download.html) (`ffmpeg.exe` i `ffprobe.exe`) do uruchamiania ze źródeł
-  (instalator ma własny). Jeśli nie ma go w `PATH`, aplikacja przy pierwszym uruchomieniu poprosi o wskazanie
-  `ffmpeg.exe` i zapamięta tę lokalizację.
+- [ffmpeg](https://ffmpeg.org/download.html) (`ffmpeg.exe` and `ffprobe.exe`) to run from the sources
+  (the installer has its own). If it is not on the `PATH`, the app asks for `ffmpeg.exe` on the first start
+  and remembers it.
 
-## Uruchamianie
+## Running
 
 ```bash
-mvn javafx:run   # uruchomienie aplikacji
-mvn test         # testy
+mvn javafx:run   # start the app
+mvn test         # tests
 ```
 
-## Instalacja
+## Installation
 
-Instalator `AudioFix-<wersja>.exe` ma w sobie Javę, więc nie trzeba jej instalować. Instaluje się na koncie
-bieżącego użytkownika do `%LOCALAPPDATA%\AudioFix` (bez uprawnień administratora) i dodaje AudioFix do menu Start
-oraz skrót na pulpicie. Nowsza wersja instalatora zastępuje starszą, a odinstalowanie jest w
-*Ustawienia → Aplikacje*. Instalator zawiera też `ffmpeg.exe` i `ffprobe.exe`, więc po instalacji AudioFix od razu konwertuje pliki.
-Ścieżka wskazana w [Ustawienia ffmpeg] nadal ma pierwszeństwo, np. dla nowszego ffmpeg.
+The installer `AudioFix-<version>.exe` contains Java, so there is nothing else to install. It installs for
+the current user into `%LOCALAPPDATA%\AudioFix` (no administrator rights needed) and adds AudioFix to the Start menu
+and a desktop shortcut. A newer installer replaces an older version; uninstall in *Settings → Apps*.
+The installer also contains `ffmpeg.exe` and `ffprobe.exe`, so AudioFix converts files right after installation.
+A path chosen in [ffmpeg settings] still comes first, e.g. for a newer ffmpeg.
 
-AudioFix zawiera [FFmpeg](https://ffmpeg.org) na licencji GNU LGPL 3.0: build *shared* z
-[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), wersja widoczna w oknie „O programie”,
-licencja w `app\ffmpeg\LICENSE.txt` w folderze instalacji, kod źródłowy na https://ffmpeg.org/download.html.
-AudioFix uruchamia ffmpeg jako osobny program i go nie modyfikuje.
+AudioFix contains [FFmpeg](https://ffmpeg.org) under the GNU LGPL 3.0: the *shared* build from
+[BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds), its version is shown in the About window,
+the license is in `app\ffmpeg\LICENSE.txt` in the installation folder, the source code at https://ffmpeg.org/download.html.
+AudioFix runs ffmpeg as a separate program and does not modify it.
 
-### Budowanie instalatora
+### Building the installer
 
-  ```bash
-  mvn -Pinstaller package                             # instalator target/installer/AudioFix-<wersja>.exe
-  mvn -Pinstaller package -Dinstaller.type=app-image  # sam folder target/installer/AudioFix z AudioFix.exe
-  ```
+```bash
+mvn -Pinstaller package                             # installer target/installer/AudioFix-<version>.exe
+mvn -Pinstaller package -Dinstaller.type=app-image  # just the folder target/installer/AudioFix with AudioFix.exe
+```
 
-- Instalator `.exe` wymaga [WiX Toolset](https://wixtoolset.org), np. `winget install --id WiXToolset.WiXToolset -e`
-  w PowerShellu uruchomionym jako administrator (włącza też potrzebny .NET Framework 3.5).
-  Wariant `app-image` działa bez WiX: folder można spakować do `.zip` i uruchamiać `AudioFix.exe` bez instalacji.
-- Dodaj `-DskipTests`, żeby nie czekać na testy.
-- Wbudowana Java zawiera tylko potrzebne moduły i dane lokalizacji dla polskiego i angielskiego.
-- ffmpeg jest pobierany przy budowaniu (ok. 80 MB, raz, potem z kopii w `~/.m2`) i sprawdzany sumą SHA-256.
-  Wersję zmienia się w `pom.xml` (`ffmpeg.release`, `ffmpeg.name`, `ffmpeg.sha256`).
+- The `.exe` installer needs the [WiX Toolset](https://wixtoolset.org), e.g. `winget install --id WiXToolset.WiXToolset -e`
+  in PowerShell run as administrator (it also turns on the needed .NET Framework 3.5).
+  The `app-image` variant works without WiX: zip the folder and run `AudioFix.exe` without installing.
+- Add `-DskipTests` to skip the tests.
+- The bundled Java contains only the needed modules and the locale data for Polish and English.
+- ffmpeg is downloaded while building (about 80 MB, once, then from the copy in `~/.m2`) and checked with SHA-256.
+  Its version is set in `pom.xml` (`ffmpeg.release`, `ffmpeg.name`, `ffmpeg.sha256`).
+- The installer itself is in English.
 
-### Logi
+### Logs
 
-Aplikacja zapisuje log do `%LOCALAPPDATA%\AudioFix\logs\audiofix.log`: jeden plik na dzień, przez 14 dni,
-razem najwyżej 50 MB. Folder otwiera przycisk **Folder logów** w oknie „O programie”. Przy zgłaszaniu błędu
-dołącz plik z dnia, w którym wystąpił.
+The app writes its log to `%LOCALAPPDATA%\AudioFix\logs\audiofix.log`: one file a day, kept for 14 days,
+at most 50 MB together. The **Log folder** button in the About window opens the folder. When reporting a bug,
+attach the file from the day it happened.
 
-## Jak to działa
+## How it works
 
-Dla każdego pliku aplikacja odczytuje listę strumieni przez `ffprobe`, a następnie buduje komendę `ffmpeg`, np.:
+For each file the app reads the list of streams with `ffprobe` and builds an `ffmpeg` command, e.g.:
 
 ```
 ffmpeg -i "Film.mkv" -map 0:v -map 0:1 -map 0:3 -map 0:t? -map_chapters 0 \
@@ -96,27 +101,44 @@ ffmpeg -i "Film.mkv" -map 0:v -map 0:1 -map 0:3 -map 0:t? -map_chapters 0 \
        "Film_fixed.mkv"
 ```
 
-Wybrane strumienie są mapowane jawnie, więc żadna ścieżka nie ginie po cichu. Konwertowane są tylko te ścieżki audio,
-które tego wymagają, a reszta jest kopiowana.
+The chosen streams are mapped one by one, so no track is lost silently. Only the audio tracks that need it
+are converted; the rest is copied.
 
-## Roadmapa
+## Translations
 
-Zadania prowadzone są w projekcie [AudioFix na GitHubie](https://github.com/users/Minner22/projects/4),
-a gotowe wersje na stronie [Releases](https://github.com/Minner22/AudioFix/releases).
+The texts are in `src/main/resources/pl/audiofix/i18n/`: `messages.properties` (Polish, the base file)
+and `messages_en.properties`. The files are UTF-8; in a text with `{0}` an apostrophe is written twice (`''`).
+FXML and code take every text from these files; `TranslationFilesTest` and `NoHardcodedTextsTest` check it.
 
-- ✅ **0.1.0, MVP:** wczytanie filmu, tabela ścieżek z wyróżnieniem DTS/TrueHD, wybór akcji i ścieżek
-  domyślnych, plik wyjściowy, konwersja z postępem, logiem i anulowaniem.
-- ✅ **0.2.0, szybka konwersja:** konwersja jednym kliknięciem (jak dawna ręczna komenda ffmpeg),
-  tytuły przekonwertowanych ścieżek zgodne z nowym formatem, wersja aplikacji w tytule okna,
-  okno „O programie” z wersjami i licencjami, automatyczne testy (CI) przy każdej zmianie.
-- ✅ **0.3.0, kolejka:** wiele plików przetwarzanych po kolei, postęp każdego pliku, przeciąganie plików na okno.
-- ✅ **0.4.0, wygląd:** nowy, płaski wygląd wg projektu (jasny i ciemny motyw zgodny z Windowsem),
-  szacowany czas do końca konwersji, kolorowana konsola logów.
-- ✅ **1.0.0, instalator:** instalator `.exe` z wbudowaną Javą i ffmpeg, automatyczne wydania na GitHubie.
-- **1.1.0, wielojęzyczność:** interfejs po polsku i angielsku z wyborem języka.
+To add a language, e.g. German (`de`):
 
-Proces wydawania nowych wersji: [RELEASING.md](RELEASING.md).
+1. Copy `messages_en.properties` to `messages_de.properties` and translate the texts.
+   Counted texts (`*.count.one`, `*.count.many`, …) need exactly the forms the language's plural rule gives.
+2. Add the plural rule to `TextFormats.pluralForm` and `TextFormats.pluralForms` (English-like by default: one / many).
+3. Add `GERMAN(Locale.of("de"))` to `Language` and, if it should be chosen on a German Windows, to `Language.forSystem`.
+4. Add a toggle button to the `language-switch` box in `main-view.fxml` (`toolbar.language.german` and its tooltip
+   in every file) and to the button map and the choice in `MainController.setLanguageSettings`.
+5. Add the language to `--include-locales` in `pom.xml`, so the installer formats its numbers.
+6. Add the file to the lists in `TranslationFilesTest`.
 
-## Licencja
+## Roadmap
 
-[MIT](LICENSE). AudioFix uruchamia [FFmpeg](https://ffmpeg.org) jako osobny program, a FFmpeg ma własną licencję (LGPL/GPL).
+Tasks are tracked in the [AudioFix project on GitHub](https://github.com/users/Minner22/projects/4),
+finished versions are on the [Releases](https://github.com/Minner22/AudioFix/releases) page.
+
+- ✅ **0.1.0, MVP:** loading a video, track table with DTS/TrueHD highlighted, choosing actions and default
+  tracks, output file, conversion with progress, log and cancelling.
+- ✅ **0.2.0, quick conversion:** one-click conversion (like the old manual ffmpeg command),
+  titles of converted tracks matching the new format, app version in the window title,
+  About window with versions and licenses, automatic tests (CI) for every change.
+- ✅ **0.3.0, queue:** many files converted in turn, progress of each file, dropping files on the window.
+- ✅ **0.4.0, look:** new flat design (light and dark theme following Windows),
+  estimated time left, colored log console.
+- ✅ **1.0.0, installer:** `.exe` installer with its own Java and ffmpeg, automatic releases on GitHub.
+- **1.1.0, languages:** the interface in Polish and English with a language switch.
+
+How new versions are released: [RELEASING.md](RELEASING.md) (in Polish).
+
+## License
+
+[MIT](LICENSE). AudioFix runs [FFmpeg](https://ffmpeg.org) as a separate program; FFmpeg has its own license (LGPL/GPL).

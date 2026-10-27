@@ -33,6 +33,7 @@ class TranslationFilesTest {
     private static final List<String> FILES = List.of("messages.properties", "messages_en.properties");
     private static final Path FXML_FOLDER = Path.of("src", "main", "resources", "pl", "audiofix", "ui");
     private static final Pattern FXML_TEXT = Pattern.compile("\\b(text|promptText)=\"([^\"]*)\"");
+    private static final Pattern POLISH_LETTER = Pattern.compile("[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]");
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\d+[^}]*}");
     /** A counted text for Messages.count: "tracks.count.few" is the "few" form of "tracks.count" (#32). */
     private static final Pattern COUNTED = Pattern.compile("(.+\\.count)\\.([a-z]+)");
@@ -63,6 +64,16 @@ class TranslationFilesTest {
         assertTrue(forms.containsKey("tracks.count"), forms.toString());
         forms.forEach((name, found) ->
                 assertEquals(new TreeSet<>(TextFormats.pluralForms(Locale.of(language))), found, name + " in " + file));
+    }
+
+    @Test
+    void englishHasNoPolishText() throws IOException {
+        // a key copied from messages.properties and never translated (#33)
+        Properties english = load("messages_en.properties");
+
+        for (String key : english.stringPropertyNames()) {
+            assertFalse(POLISH_LETTER.matcher(english.getProperty(key)).find(), key + " is not translated: " + english.getProperty(key));
+        }
     }
 
     @ParameterizedTest

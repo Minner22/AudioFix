@@ -79,7 +79,7 @@ class EnglishScenarioTest {
         assertEquals("File queue (0)", text("queueTitleLabel"));
         assertEquals("Remaining: 0", text("queueRemainingLabel"));
         assertEquals("Tracks", text("tracksTitleLabel"));
-        assertEquals("Drop films here or use [Add files…]",
+        assertEquals("Drop videos here or use [Add files…]",
                 callOnFxThread(() -> ((Label) ((ListView<?>) root.lookup("#queueList")).getPlaceholder()).getText()));
         assertEquals("Add a file to see its tracks",
                 callOnFxThread(() -> ((Label) ((TableView<?>) root.lookup("#trackTable")).getPlaceholder()).getText()));
@@ -100,7 +100,7 @@ class EnglishScenarioTest {
         add();
 
         assertEquals(List.of("Video", "Audio", "Audio", "Subtitles"), callOnFxThread(() -> cellTexts("typeColumn")));
-        assertEquals("Copy (passthrough)", callOnFxThread(() -> fixedAction(0)));
+        assertEquals("Copy", callOnFxThread(() -> fixedAction(0)));
         assertEquals("Copy", callOnFxThread(() -> fixedAction(3)));
     }
 

@@ -315,7 +315,7 @@ class QueueViewTest {
             assertFalse(job.getPlans().get(2).isKeep(), job.toString());
             assertEquals(AudioCodec.EAC3, job.getPlans().get(1).getTargetCodec(), job.toString());
         }
-        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("plików: 2")), alertTexts().toString());
+        assertTrue(alertTexts().stream().anyMatch(text -> text.contains("Ustawienia ścieżek skopiowano do 2 plików.")), alertTexts().toString());
     }
 
     @Test

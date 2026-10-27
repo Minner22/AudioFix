@@ -335,7 +335,7 @@ public final class TrackTableConfigurer {
             }
 
             if (!row.getStream().isAudio()) {
-                fixed.getItems().setAll(Messages.get(row.getStream().type() == StreamType.VIDEO ? "track.action.videoCopy" : "track.action.subtitleCopy"));
+                fixed.getItems().setAll(Messages.get("track.action.copy"));
                 fixed.getSelectionModel().selectFirst();
                 setGraphic(fixed);
                 return;
